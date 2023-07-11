@@ -26,70 +26,71 @@ import { globalScope } from '../common/constants/runtime'
  * sensitive to network load, this may result in smaller builds with slightly lower performance impact.
  */
 export class Agent extends AgentBase {
-  constructor (options, agentIdentifier = generateRandomHexString(16)) {
-    super()
+  constructor (options, agentIdentifier) {
+    super(options, agentIdentifier)
+    // if (!globalScope) {
+    //   // We could not determine the runtime environment. Short-circuite the agent here
+    //   // to avoid possible exceptions later that may cause issues with customer's application.
+    //   warn('Failed to initial the agent. Could not determine the runtime environment.')
+    //   return
+    // }
 
-    if (!globalScope) {
-      // We could not determine the runtime environment. Short-circuite the agent here
-      // to avoid possible exceptions later that may cause issues with customer's application.
-      warn('Failed to initial the agent. Could not determine the runtime environment.')
-      return
-    }
+    // this.agentIdentifier = agentIdentifier
+    // this.sharedAggregator = new Aggregator({ agentIdentifier: this.agentIdentifier })
+    // this.features = {}
 
-    this.agentIdentifier = agentIdentifier
-    this.sharedAggregator = new Aggregator({ agentIdentifier: this.agentIdentifier })
-    this.features = {}
+    // this.desiredFeatures = new Set(options.features || []) // expected to be a list of static Instrument/InstrumentBase classes, see "spa.js" for example
+    // // For Now... ALL agents must make the rum call whether the page_view_event feature was enabled or not.
+    // // NR1 creates an index on the rum call, and if not seen for a few days, will remove the browser app!
+    // // Future work is being planned to evaluate removing this behavior from the backend, but for now we must ensure this call is made
+    // this.desiredFeatures.add(PageViewEvent)
 
-    this.desiredFeatures = new Set(options.features || []) // expected to be a list of static Instrument/InstrumentBase classes, see "spa.js" for example
-    // For Now... ALL agents must make the rum call whether the page_view_event feature was enabled or not.
-    // NR1 creates an index on the rum call, and if not seen for a few days, will remove the browser app!
-    // Future work is being planned to evaluate removing this behavior from the backend, but for now we must ensure this call is made
-    this.desiredFeatures.add(PageViewEvent)
-
-    Object.assign(this, configure(this.agentIdentifier, options, options.loaderType || 'agent'))
+    // Object.assign(this, configure(this.agentIdentifier, options, options.loaderType || 'agent'))
 
     this.run()
   }
 
-  get config () {
-    return {
-      info: getInfo(this.agentIdentifier),
-      init: getConfiguration(this.agentIdentifier),
-      loader_config: getLoaderConfig(this.agentIdentifier),
-      runtime: getRuntime(this.agentIdentifier)
-    }
-  }
+  // get config () {
+  //   return {
+  //     info: getInfo(this.agentIdentifier),
+  //     init: getConfiguration(this.agentIdentifier),
+  //     loader_config: getLoaderConfig(this.agentIdentifier),
+  //     runtime: getRuntime(this.agentIdentifier)
+  //   }
+  // }
 
   run () {
     const NR_FEATURES_REF_NAME = 'features'
     // Attempt to initialize all the requested features (sequentially in prio order & synchronously), with any failure aborting the whole process.
     try {
-      const enabledFeatures = getEnabledFeatures(this.agentIdentifier)
+      const enabledFeatures = this.enabledFeatures
       const featuresToStart = [...this.desiredFeatures]
       featuresToStart.sort((a, b) => featurePriority[a.featureName] - featurePriority[b.featureName])
       featuresToStart.forEach(InstrumentCtor => {
         // pageViewEvent must be enabled because RUM calls are not optional. See comment in constructor and PR 428.
-        if (enabledFeatures[InstrumentCtor.featureName] || InstrumentCtor.featureName === FEATURE_NAMES.pageViewEvent) {
+        if (enabledFeatures[InstrumentCtor.featureName]) {
           const dependencies = getFeatureDependencyNames(InstrumentCtor.featureName)
           const hasAllDeps = dependencies.every(x => enabledFeatures[x])
           if (!hasAllDeps) warn(`${InstrumentCtor.featureName} is enabled but one or more dependent features has been disabled (${stringify(dependencies)}). This may cause unintended consequences or missing data...`)
-          this.features[InstrumentCtor.featureName] = new InstrumentCtor(this.agentIdentifier, this.sharedAggregator)
+          this.features[InstrumentCtor.featureName] = new InstrumentCtor(this.agentIdentifier)
         }
       })
-      gosNREUMInitializedAgents(this.agentIdentifier, this.features, NR_FEATURES_REF_NAME)
+      // gosNREUMInitializedAgents(this.agentIdentifier, this.features, NR_FEATURES_REF_NAME)
     } catch (err) {
       warn('Failed to initialize all enabled instrument classes (agent aborted) -', err)
-      for (const featName in this.features) { // this.features hold only features that have been instantiated
+
+      // Abort any initialized features
+      for (const featName in this.features) {
         this.features[featName].abortHandler?.()
       }
 
-      const newrelic = gosNREUM()
-      delete newrelic.initializedAgents[this.agentIdentifier]?.api // prevent further calls to agent-specific APIs (see "configure.js")
-      delete newrelic.initializedAgents[this.agentIdentifier]?.[NR_FEATURES_REF_NAME] // GC mem used internally by features
-      delete this.sharedAggregator
-      // Keep the initialized agent object with its configs for troubleshooting purposes.
-      newrelic.ee?.abort() // set flag and clear global backlog
-      delete newrelic.ee?.get(this.agentIdentifier) // clear this agent's own backlog too
+      // const newrelic = gosNREUM()
+      // delete newrelic.initializedAgents[this.agentIdentifier]?.api // prevent further calls to agent-specific APIs (see "configure.js")
+      // delete newrelic.initializedAgents[this.agentIdentifier]?.[NR_FEATURES_REF_NAME] // GC mem used internally by features
+      // delete this.sharedAggregator
+      // // Keep the initialized agent object with its configs for troubleshooting purposes.
+      // newrelic.ee?.abort() // set flag and clear global backlog
+      // delete newrelic.ee?.get(this.agentIdentifier) // clear this agent's own backlog too
       return false
     }
   }

@@ -14,6 +14,16 @@ export function gosNREUM () {
   return globalScope.NREUM
 }
 
+export function gosInitializedAgent (agent) {
+  let nr = gosNREUM()
+
+  if (!nr.initializedAgents) {
+    nr.initializedAgents = {}
+  }
+
+  nr.initializedAgents[agent.agentIdentifier] = agent
+}
+
 export function gosNREUMInfo () {
   let nr = gosNREUM()
   const externallySupplied = nr.info || {}
