@@ -13,16 +13,16 @@ import { Instrument as InstrumentSessionTrace } from '../features/session_trace/
 import { Instrument as InstrumentSpa } from '../features/spa/instrument'
 import { Instrument as InstrumentPageAction } from '../features/page_action/instrument'
 
-new Agent({
+window.agent = new Agent({
   features: [
-    InstrumentXhr,
-    InstrumentPageViewEvent,
-    InstrumentPageViewTiming,
-    InstrumentSessionTrace,
-    InstrumentMetrics,
-    InstrumentPageAction,
-    InstrumentErrors,
-    InstrumentSpa
+    // InstrumentXhr,
+    // InstrumentPageViewEvent,
+    // InstrumentPageViewTiming,
+    // InstrumentSessionTrace,
+    // InstrumentMetrics,
+    // InstrumentPageAction,
+    // InstrumentErrors,
+    // InstrumentSpa
   ],
   loaderType: 'spa'
 })

@@ -10,24 +10,22 @@ import { onWindowLoad } from '../../common/window/load'
 import { isBrowserScope } from '../../common/constants/runtime'
 import { warn } from '../../common/util/console'
 import { FEATURE_NAMES } from '../../loaders/features/features'
-import { getConfigurationValue } from '../../common/config/config'
+import { AgentBase } from '../../loaders/agent-base'
 
 /**
  * Base class for instrumenting a feature.
- * @extends FeatureBase
  */
 export class InstrumentBase extends FeatureBase {
   /**
-   * Instantiate InstrumentBase.
-   * @param {string} agentIdentifier - The unique ID of the instantiated agent (relative to global scope).
-   * @param {Aggregator} aggregator - The shared Aggregator that will handle batching and reporting of data.
-   * @param {string} featureName - The name of the feature module (used to construct file path).
-   * @param {boolean} [auto=true] - Determines whether the feature should automatically register to have the draining
-   *     of its pooled instrumentation data handled by the agent's centralized drain functionality, rather than draining
-   *     immediately. Primarily useful for fine-grained control in tests.
+   * Creates a feature instrument instance with base methods for asyncronously importing the features aggregate class.
+   * @param {AgentBase} agent The agent instantiating the feature.
+   * @param {string} featureName The name of the feature module (used to construct file path).
+   * @param {boolean} [auto=true] Determines whether the feature should automatically register to have the draining
+   * of its pooled instrumentation data handled by the agent's centralized drain functionality, rather than draining
+   * immediately. Primarily useful for fine-grained control in tests.
    */
-  constructor (agentIdentifier, aggregator, featureName, auto = true) {
-    super(agentIdentifier, aggregator, featureName)
+  constructor (agent, featureName, auto = true) {
+    super(agent, featureName)
     this.auto = auto
 
     /** @type {Function | undefined} This should be set by any derived Instrument class if it has things to do when feature fails or is killed. */
@@ -43,7 +41,7 @@ export class InstrumentBase extends FeatureBase {
     */
     this.onAggregateImported
 
-    if (auto) registerDrain(agentIdentifier, featureName)
+    if (auto) registerDrain(this.agent.agentIdentifier, featureName)
   }
 
   /**
@@ -54,7 +52,7 @@ export class InstrumentBase extends FeatureBase {
    */
   importAggregator (argsObjFromInstrument = {}) {
     if (this.featAggregate || !this.auto) return
-    const enableSessionTracking = isBrowserScope && getConfigurationValue(this.agentIdentifier, 'privacy.cookies_enabled') === true
+    const enableSessionTracking = isBrowserScope && this.agent.initConfig.privacy.cookies_enabled === true
     let loadedSuccessfully
     this.onAggregateImported = new Promise(resolve => {
       loadedSuccessfully = resolve
@@ -83,7 +81,7 @@ export class InstrumentBase extends FeatureBase {
         }
         const { lazyFeatureLoader } = await import(/* webpackChunkName: "lazy-feature-loader" */ './lazy-feature-loader')
         const { Aggregate } = await lazyFeatureLoader(this.featureName, 'aggregate')
-        this.featAggregate = new Aggregate(this.agentIdentifier, this.aggregator, argsObjFromInstrument)
+        this.featAggregate = new Aggregate(this.agent, argsObjFromInstrument)
         loadedSuccessfully(true)
       } catch (e) {
         warn(`Downloading and initializing ${this.featureName} failed...`, e)
@@ -111,7 +109,7 @@ export class InstrumentBase extends FeatureBase {
   // session replay samples can only be decided on the first load of a session
   // session replays can continue if in progress
     if (featureName === FEATURE_NAMES.sessionReplay) {
-      if (getConfigurationValue(this.agentIdentifier, 'session_trace.enabled') === false) return false
+      if (this.agent.initConfig.session_trace.enabled !== true) return false
       return !!session?.isNew || !!session?.state.sessionReplay
     }
     // todo -- add case like above for session trace

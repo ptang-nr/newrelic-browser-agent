@@ -18,11 +18,11 @@ const {
 
 export class Instrument extends InstrumentBase {
   static featureName = FEATURE_NAME
-  constructor (agentIdentifier, aggregator, auto = true) {
-    super(agentIdentifier, aggregator, FEATURE_NAME, auto)
+  constructor (agent, auto = true) {
+    super(agent, FEATURE_NAME, auto)
     if (!isBrowserScope) return // SPA not supported outside web env
 
-    if (!getRuntime(agentIdentifier).xhrWrappable) return
+    if (!this.agent.runtimeConfig.xhrWrappable) return
 
     try {
       this.removeOnAbort = new AbortController()
@@ -31,25 +31,25 @@ export class Instrument extends InstrumentBase {
     let depth = 0
     let startHash
 
-    const tracerEE = this.ee.get('tracer')
-    const jsonpEE = wrapJsonP(this.ee)
-    const promiseEE = wrapPromise(this.ee)
-    const timerEE = wrapTimer(this.ee)
-    const xhrEE = wrapXhr(this.ee)
-    const eventsEE = this.ee.get('events') // wrapXhr will call wrapEvents
-    const fetchEE = wrapFetch(this.ee)
-    const historyEE = wrapHistory(this.ee)
-    const mutationEE = wrapMutation(this.ee)
+    const tracerEE = this.eventEmitter.get('tracer')
+    const jsonpEE = wrapJsonP(this.eventEmitter)
+    const promiseEE = wrapPromise(this.eventEmitter)
+    const timerEE = wrapTimer(this.eventEmitter)
+    const xhrEE = wrapXhr(this.eventEmitter)
+    const eventsEE = this.eventEmitter.get('events') // wrapXhr will call wrapEvents
+    const fetchEE = wrapFetch(this.eventEmitter)
+    const historyEE = wrapHistory(this.eventEmitter)
+    const mutationEE = wrapMutation(this.eventEmitter)
 
-    this.ee.on(FN_START, startTimestamp)
+    this.eventEmitter.on(FN_START, startTimestamp)
     promiseEE.on(CB_START, startTimestamp)
     jsonpEE.on(CB_START, startTimestamp)
 
-    this.ee.on(FN_END, endTimestamp)
+    this.eventEmitter.on(FN_END, endTimestamp)
     promiseEE.on(CB_END, endTimestamp)
     jsonpEE.on(CB_END, endTimestamp)
 
-    this.ee.buffer([FN_START, FN_END, 'xhr-resolved'], this.featureName)
+    this.eventEmitter.buffer([FN_START, FN_END, 'xhr-resolved'], this.featureName)
     eventsEE.buffer([FN_START], this.featureName)
     timerEE.buffer(['setTimeout' + END, 'clearTimeout' + START, FN_START], this.featureName)
     xhrEE.buffer([FN_START, 'new-xhr', 'send-xhr' + START], this.featureName)

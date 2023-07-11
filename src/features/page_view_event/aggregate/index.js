@@ -16,12 +16,17 @@ import { AggregateBase } from '../../utils/aggregate-base'
 
 export class Aggregate extends AggregateBase {
   static featureName = CONSTANTS.FEATURE_NAME
-  constructor (agentIdentifier, aggregator) {
-    super(agentIdentifier, aggregator, CONSTANTS.FEATURE_NAME)
+
+  /**
+   * Creates a new PageViewEvent feature aggregate class instance.
+   * @param {AgentBase} agent The agent instantiating this feature instrument.
+   */
+  constructor (agent) {
+    super(agent, CONSTANTS.FEATURE_NAME)
 
     if (typeof PerformanceNavigationTiming !== 'undefined' && !isiOS) {
       this.alreadySent = false // we don't support timings on BFCache restores
-      const agentRuntime = getRuntime(agentIdentifier) // we'll store timing values on the runtime obj to be read by the aggregate module
+      const agentRuntime = this.agent.runtimeConfig // we'll store timing values on the runtime obj to be read by the aggregate module
 
       /* Time To First Byte
         This listener must record these values *before* PVE's aggregate sends RUM. */
@@ -46,12 +51,12 @@ export class Aggregate extends AggregateBase {
   }
 
   getScheme () {
-    return getConfigurationValue(this.agentIdentifier, 'ssl') === false ? 'http' : 'https'
+    return this.agent.initConfig.ssl !== false ? 'https' : 'http'
   }
 
   sendRum () {
-    const info = getInfo(this.agentIdentifier)
-    const agentRuntime = getRuntime(this.agentIdentifier)
+    const info = this.agent.infoConfig
+    const agentRuntime = this.agent.runtimeConfig
     const harvester = new Harvest(this)
 
     if (!info.beacon) return

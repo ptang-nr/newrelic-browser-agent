@@ -5,9 +5,14 @@ import { configure } from '../../loaders/configure/configure'
 import { gosCDN } from '../../common/window/nreum'
 
 export class AggregateBase extends FeatureBase {
-  constructor (...args) {
-    super(...args)
-    this.checkConfiguration()
+  /**
+   * Creates a feature instrument instance with base methods for asyncronously importing the features aggregate class.
+   * @param {AgentBase} agent The agent instantiating the feature.
+   * @param {string} featureName The name of the feature module (used to construct file path).
+   */
+  constructor (agent, featureName) {
+    super(agent, featureName)
+    //this.checkConfiguration()
   }
 
   /**

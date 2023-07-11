@@ -6,16 +6,25 @@ import { FEATURE_NAMES } from '../../../loaders/features/features'
 import { getRuntime } from '../../../common/config/config'
 import { onDOMContentLoaded, onWindowLoad } from '../../../common/window/load'
 import { now } from '../../../common/timing/now'
+import { AgentBase } from '../../../loaders/agent-base'
 
 export class Instrument extends InstrumentBase {
   static featureName = CONSTANTS.FEATURE_NAME
-  constructor (agentIdentifier, aggregator, auto = true) {
-    super(agentIdentifier, aggregator, CONSTANTS.FEATURE_NAME, auto)
+
+  /**
+   * Creates a new PageViewEvent feature instrument class instance.
+   * @param {AgentBase} agent The agent instantiating this feature instrument.
+   * @param {boolean} [auto=true] Determines whether the feature should automatically register to have the draining
+   * of its pooled instrumentation data handled by the agent's centralized drain functionality, rather than draining
+   * immediately. Primarily useful for fine-grained control in tests.
+   */
+  constructor (agent, auto = true) {
+    super(agent, CONSTANTS.FEATURE_NAME, auto)
 
     if ((typeof PerformanceNavigationTiming === 'undefined' || isiOS) && typeof PerformanceTiming !== 'undefined') {
       // For majority browser versions in which PNT exists, we can get load timings later from the nav entry (in the aggregate portion). At minimum, PT should exist for main window.
       // *cli Mar'23 - iOS 15.2 & 15.4 testing in Sauce still fails with onTTFB. Hence, all iOS will fallback to this for now. Unknown if this is similar in nature to iOS_below16 bug.
-      const agentRuntime = getRuntime(agentIdentifier)
+      const agentRuntime = this.agent.runtimeConfig
 
       agentRuntime[CONSTANTS.TTFB] = Math.max(Date.now() - agentRuntime.offset, 0)
       onDOMContentLoaded(() => agentRuntime[CONSTANTS.FBTDC] = Math.max(now() - agentRuntime[CONSTANTS.TTFB], 0))
