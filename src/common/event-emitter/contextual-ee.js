@@ -111,7 +111,8 @@ function ee (old, debugId) {
   }
 
   function listeners (type) {
-    return handlers[type] || []
+    if (type === '*') return handlers[type] || []
+    return [...(handlers[type] || []), ...listeners('*')]
   }
 
   function getOrCreate (name) {

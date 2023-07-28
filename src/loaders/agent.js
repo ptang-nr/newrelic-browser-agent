@@ -14,6 +14,7 @@ import { getConfiguration, getInfo, getLoaderConfig, getRuntime } from '../commo
 import { warn } from '../common/util/console'
 import { stringify } from '../common/util/stringify'
 import { globalScope } from '../common/constants/runtime'
+import { attachDebugger } from '../common/debugger'
 
 /**
  * @typedef {import('./api/interaction-types').InteractionInstance} InteractionInstance
@@ -46,7 +47,7 @@ export class Agent extends AgentBase {
 
     Object.assign(this, configure(this.agentIdentifier, options, options.loaderType || 'agent'))
 
-    this.start()
+    attachDebugger(this, this.start.bind(this))
   }
 
   get config () {
