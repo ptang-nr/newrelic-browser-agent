@@ -111,6 +111,7 @@ export class Aggregate extends AggregateBase {
     if (!isEnabled()) return
 
     state.initialPageLoad = new Interaction('initialPageLoad', 0, state.lastSeenUrl, state.lastSeenRouteName, onInteractionFinished, agentIdentifier)
+    console.log('NRBA: Initial interaction created', state.initialPageLoad)
     state.initialPageLoad.save = true
     state.prevInteraction = state.initialPageLoad
     state.currentNode = state.initialPageLoad.root // hint
@@ -169,6 +170,7 @@ export class Aggregate extends AggregateBase {
       var eventNode = ev.__nrNode
 
       if (!state.pageLoaded && evName === 'load' && eventSource === window) {
+        console.log('NRBA: Page load event seen')
         state.pageLoaded = true
         // set to null so prevNode is set correctly
         this.prevNode = state.currentNode = null
@@ -203,6 +205,7 @@ export class Aggregate extends AggregateBase {
         // so that it has a chance to possibly start an interaction.
         if (INTERACTION_EVENTS.indexOf(evName) !== -1) {
           var ixn = new Interaction(evName, this[FN_START], state.lastSeenUrl, state.lastSeenRouteName, onInteractionFinished, agentIdentifier)
+          console.log('NRBA: New interaction created', ixn)
 
           // Store the interaction as prevInteraction in case it is prematurely discarded
           state.prevInteraction = ixn
@@ -702,6 +705,7 @@ export class Aggregate extends AggregateBase {
 
     function saveInteraction (interaction) {
       if (interaction.ignored || (!interaction.save && !interaction.routeChange)) {
+        console.log('NRBA: Interaction discarded', interaction)
         baseEE.emit('interactionDiscarded', [interaction])
         return
       }
@@ -721,6 +725,7 @@ export class Aggregate extends AggregateBase {
         interaction.root.attrs.firstContentfulPaint = paintMetrics['first-contentful-paint']
       }
       baseEE.emit('interactionSaved', [interaction])
+      console.log('NRBA: Interaction saved', interaction)
       state.interactionsToHarvest.push(interaction)
       scheduler.scheduleHarvest(0)
     }
