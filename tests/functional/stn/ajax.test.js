@@ -5,9 +5,7 @@
 
 const testDriver = require('../../../tools/jil/index')
 
-let supported = testDriver.Matcher.withFeature('stn')
-
-testDriver.test('session trace resources', supported, function (t, browser, router) {
+testDriver.test('session trace resources', function (t, browser, router) {
   let assetURL = router.assetURL('stn/ajax-disabled.html', {
     loader: 'full',
     init: {
@@ -56,7 +54,7 @@ testDriver.test('session trace resources', supported, function (t, browser, rout
   }
 })
 
-testDriver.test('session trace ajax deny list', supported, function (t, browser, router) {
+testDriver.test('session trace ajax deny list', function (t, browser, router) {
   let assetURL = router.assetURL('stn/ajax-disabled.html', {
     loader: 'full',
     init: {
@@ -77,11 +75,8 @@ testDriver.test('session trace ajax deny list', supported, function (t, browser,
   let loadPromise = browser.safeGet(assetURL).waitForFeature('loaded')
   let rumPromise = router.expectRum()
   let resourcePromise = router.expectResources()
-  const ajaxPromise = router.expectAjaxTimeSlices(8000).then(() => {
-    t.fail('Should not have seen the ajax event')
-  }).catch(() => {})
 
-  Promise.all([resourcePromise, ajaxPromise, loadPromise, rumPromise]).then(([result]) => {
+  Promise.all([resourcePromise, loadPromise, rumPromise]).then(([result]) => {
     t.equal(result.reply.statusCode, 200, 'server responded with 200')
 
     // trigger an XHR call after

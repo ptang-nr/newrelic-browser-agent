@@ -96,7 +96,8 @@ export class Harvest extends SharedContext {
       return false
     }
 
-    let url = `${this.getScheme()}://${info.errorBeacon}${endpoint !== 'rum' ? `/${endpoint}` : ''}/1/${info.licenseKey}`
+    const endpointURLPart = endpoint !== 'rum' ? `/${endpoint}` : ''
+    let url = `${this.getScheme()}://${info.errorBeacon}${endpointURLPart}/1/${info.licenseKey}`
     if (customUrl) url = customUrl
     if (raw) url = `${this.getScheme()}://${info.errorBeacon}/${endpoint}`
 
@@ -126,11 +127,6 @@ export class Harvest extends SharedContext {
       // If body is null, undefined, or an empty object or array, send an empty string instead
       body = ''
     }
-
-    // Get bytes harvested per endpoint as a supportability metric. See metrics aggregator (on unload).
-    agentRuntime.bytesSent[endpoint] = (agentRuntime.bytesSent[endpoint] || 0) + body?.length || 0
-    // Get query bytes harvested per endpoint as a supportability metric. See metrics aggregator (on unload).
-    agentRuntime.queryBytesSent[endpoint] = (agentRuntime.queryBytesSent[endpoint] || 0) + fullUrl.split('?').slice(-1)[0]?.length || 0
 
     const headers = []
 

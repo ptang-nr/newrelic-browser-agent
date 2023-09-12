@@ -1,3 +1,5 @@
+/* eslint-disable n/handle-callback-err */
+
 import { warn } from '../common/util/console'
 
 export class AgentBase {
@@ -88,6 +90,15 @@ export class AgentBase {
    * @param {string} id The ID or version of this release; for example, a version number, build number from your CI environment, GitHub SHA, GUID, or a hash of the contents.
    */
   addRelease (name, id) {
+    warn('Call to agent api addRelease failed. The agent is not currently initialized.')
+  }
+
+  /**
+   * Starts a set of agent features if not running in "autoStart" mode
+   * {@link https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/start/}
+   * @param {string|string[]|undefined} name The feature name(s) to start.  If no name(s) are passed, all features will be started
+   */
+  start (featureNames) {
     warn('Call to agent api addRelease failed. The agent is not currently initialized.')
   }
 }

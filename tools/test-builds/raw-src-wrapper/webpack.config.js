@@ -1,14 +1,13 @@
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
-const isProduction = process.env.NODE_ENV == 'production'
+const isProduction = process.env.NODE_ENV === 'production'
 const htmlTemplate = (script) => `<html>
   <head>
     <title>RUM Unit Test</title>
     {init}
     {config}
     <script src="${script}.js"></script>
-    {script-injection}
   </head>
   <body>
     <h1>This is a generic page that is instrumented by the NPM agent</h1>
@@ -21,7 +20,6 @@ const workerHtmlTemplate = `<html>
     {config}
     {worker-commands}
     <script src="worker-init.js"></script>
-    {script-injection}
   </head>
   <body>
     <h1>This is a generic page that is instrumented by the NPM agent</h1>
