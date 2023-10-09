@@ -60,12 +60,12 @@ export function setAPI (agentIdentifier, forceDrain) {
   apiInterface.addPageAction = apiCall(prefix, 'addPageAction', true, FEATURE_NAMES.pageAction)
   apiInterface.setCurrentRouteName = apiCall(prefix, 'routeName', true, FEATURE_NAMES.spa)
 
-  apiInterface.setPageViewName = function (name, host) {
-    if (typeof name !== 'string') return
-    if (name.charAt(0) !== '/') name = '/' + name
-    getRuntime(agentIdentifier).customTransaction = (host || 'http://custom.transaction') + name
-    return apiCall(prefix, 'setPageViewName', true)()
-  }
+  // apiInterface.setPageViewName = function (name, host) {
+  //   if (typeof name !== 'string') return
+  //   if (name.charAt(0) !== '/') name = '/' + name
+  //   getRuntime(agentIdentifier).customTransaction = (host || 'http://custom.transaction') + name
+  //   return apiCall(prefix, 'setPageViewName', true)()
+  // }
 
   /**
    * Attach the key-value attribute onto agent payloads. All browser events in NR will be affected.

@@ -4,6 +4,16 @@ import { warn } from '../common/util/console'
 
 export class AgentBase {
   /**
+   * Extend the agent API interface.
+   * @param name {string} Name of api method being added
+   * @param fn {Function} The function called for the api
+   */
+  addApi (name, fn) {
+    this[name] = fn
+    newrelic.initializedAgents[this.agentIdentifier].api[name] = this[name]
+  }
+
+  /**
    * Reports a browser PageAction event along with a name and optional attributes.
    * {@link https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/addpageaction/}
    * @param {string} name Name or category of the action. Reported as the actionName attribute.
@@ -17,7 +27,7 @@ export class AgentBase {
    * Groups page views to help URL structure or to capture the URL's routing information.
    * {@link https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/setpageviewname/}
    * @param {string} name The page name you want to use. Use alphanumeric characters.
-   * @param {string} [host] Default is http://custom.transaction. Typically set host to your site's domain URI.
+   * @param {string} [host] Default is http://custom.transaction. Typically, set host to your site's domain URI.
    */
   setPageViewName (name, host) {
     warn('Call to agent api setPageViewName failed. The page view feature is not currently initialized.')

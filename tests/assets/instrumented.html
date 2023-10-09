@@ -7,6 +7,9 @@
   <head>
     <title>RUM Unit Test</title>
     {init} {config} {loader}
+    <script>
+      newrelic.setPageViewName('foobar')
+    </script>
   </head>
   <body>Instrumented</body>
 </html>

@@ -16,6 +16,7 @@ import { getConfiguration, getInfo, getLoaderConfig, getRuntime } from '../commo
 import { warn } from '../common/util/console'
 import { stringify } from '../common/util/stringify'
 import { globalScope } from '../common/constants/runtime'
+import { initializeAgentApi } from '../features/page_view_event/instrument/api'
 
 /**
  * @typedef {import('./api/interaction-types').InteractionInstance} InteractionInstance
@@ -74,6 +75,9 @@ export class Agent extends AgentBase {
           const hasAllDeps = dependencies.every(x => enabledFeatures[x])
           if (!hasAllDeps) warn(`${InstrumentCtor.featureName} is enabled but one or more dependent features has been disabled (${stringify(dependencies)}). This may cause unintended consequences or missing data...`)
           this.features[InstrumentCtor.featureName] = new InstrumentCtor(this.agentIdentifier, this.sharedAggregator)
+          if (typeof InstrumentCtor.initializeAgentApi === 'function') {
+            InstrumentCtor.initializeAgentApi(this)
+          }
         }
       })
       gosNREUMInitializedAgents(this.agentIdentifier, this.features, NR_FEATURES_REF_NAME)
