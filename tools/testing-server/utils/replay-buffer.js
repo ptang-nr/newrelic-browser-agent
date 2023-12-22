@@ -25,13 +25,16 @@ module.exports.storeReplayData = async (sessionId, firstTimestamp, srEvents) => 
 
 module.exports.retrieveReplayData = async (sessionId) => {
   if (typeof sessionId !== 'string' || sessionId.trim().length === 0) {
-    console.warn('Could not retrieve replay data: missing session id')
+    console.warn('Could not retrieve session id: grabbing all session data')
     return []
   }
 
   await fs.promises.mkdir(srCacheDir, { recursive: true })
   const replayFiles = (await fs.promises.readdir(srCacheDir, { withFileTypes: true }))
-    .filter(f => f.name.startsWith(sessionId))
+    .filter(f => {
+      if (sessionId) return f.name.startsWith(sessionId)
+      return true
+    })
 
   if (replayFiles.length === 0) {
     console.warn('Could not retrieve replay data: data not found')
