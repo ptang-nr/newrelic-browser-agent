@@ -32,7 +32,11 @@ module.exports = {
     {
       ...commonConfig,
       displayName: 'component',
-      testMatch: ['<rootDir>/src/**/?(*.)+(component-test).[tj]s?(x)']
+      testMatch: ['<rootDir>/src/**/?(*.)+(component-test).[tj]s?(x)'],
+      setupFilesAfterEnv: [
+        ...commonConfig.setupFilesAfterEnv,
+        '<rootDir>/tools/jest/component-test-globals.mjs'
+      ]
     }
   ]
 }

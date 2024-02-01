@@ -15,14 +15,19 @@
     </script>
     {config}
     {loader}
-      
+
     <script type="text/javascript">
-      const xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest();
       xhr.addEventListener('load', function() {
         console.log(this.responseText);
       })
-      xhr.open('GET', 'data:,Hello%2C%20World%21');
+      xhr.open('GET', 'data:,Hello%2C%20World%21', true);
       xhr.send();
+    </script>
+    <script type="text/javascript">
+      if (typeof fetch !== 'undefined') {
+        fetch('data:,Hello%2C%20World%21').catch(console.error)
+      }
     </script>
   </head>
   <body>

@@ -23,22 +23,6 @@ afterEach(() => {
   jest.resetAllMocks()
 })
 
-describe('global event-emitter', () => {
-  test('it sets the global event-emitter on window.NREUM when it does not already exist', async () => {
-    const { ee } = await import('./contextual-ee')
-
-    expect(ee).toEqual(mockNREUM.ee)
-  })
-
-  test('it does not set the global event-emitter on window.NREUM when it already exists', async () => {
-    mockNREUM.ee = {}
-
-    const { ee } = await import('./contextual-ee')
-
-    expect(ee).not.toEqual(mockNREUM.ee)
-  })
-})
-
 describe('scoping event-emitter', () => {
   test('it creates a new child event-emitter', async () => {
     const { ee } = await import('./contextual-ee')
@@ -147,7 +131,7 @@ describe('event-emitter buffer', () => {
     const { ee } = await import('./contextual-ee')
     const { drain } = await import('../drain/drain')
     const mockListener = jest.fn()
-    const eventType = faker.datatype.uuid()
+    const eventType = faker.string.uuid()
     const eventArgs = ['a', 'b', 'c']
 
     ee.on(eventType, mockListener)

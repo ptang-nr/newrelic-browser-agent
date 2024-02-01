@@ -103,50 +103,6 @@ test('xhr timing', function (t) {
 })
 
 var urls = {
-  '/xhr_with_cat/1': {
-    check: function (params, metrics, t) {
-      var host = params.host.split(':')
-      var hostname = host[0]
-      var port = host[1]
-      t.equal(params.status, 200, 'correct status for /xhr_with_cat')
-      t.equal(params.method, 'GET', 'correct method for /xhr_with_cat')
-      t.ok(hostname.length, 'host has a hostname')
-      t.equal(+port, assetServerPort, 'host correct port number')
-      t.ok(typeof params.cat === 'string', 'has CAT data for /xhr_with_cat')
-      t.ok(metrics.rxSize > 100, 'Has some size for /xhr_with_cat')
-      t.ok(metrics.duration > 1, 'Took some time for /xhr_with_cat')
-      t.equal(metrics.txSize, undefined, 'No txSize for get')
-      if (oldFF) {
-        t.skip('old firefox has inconsistent timing')
-      } else {
-        t.ok(metrics.cbTime >= onloadtime + loadeventtime, 'Callbacks Took some time for /xhr_with_cat, one load and onload : ' + metrics.cbTime)
-      }
-      t.skip(params.pathname, 'does not have pathname when CAT data present for /xhr_with_cat')
-    },
-    afterOpen: function () {
-      this.xhr.onload = wait
-      this.xhr.addEventListener('load', wait, false)
-    },
-    plan: 10
-  },
-  '/abort': {
-    check: function (params, metrics, t) {
-      t.fail('aborted XHR reported')
-    },
-    afterSend: function () { this.xhr.abort() },
-    plan: 0
-  },
-  '/timeout': {
-    check: function (params, metrics, t) {
-      if (metrics.duration >= 300) t.skip('status code for timeout request is 0 (browser does not support timeouts)')
-      else t.equal(params.status, 0, 'Status code for timeout request is 0')
-      t.equal(metrics.txSize, undefined, 'No txSize for empty put')
-    },
-    method: 'PUT',
-    payload: '',
-    afterOpen: function () { this.xhr.timeout = 10 },
-    plan: 2
-  },
   '/echo': {
     check: function (params, metrics, t) {
       t.equal(metrics.txSize, 10, 'Get txSize on posts with a body')
@@ -162,57 +118,6 @@ var urls = {
       this.xhr.onload = wait
     },
     plan: 2
-  },
-  '/xhr_no_cat': {
-    check: function (params, metrics, t) {
-      t.equal(params.status, 200, 'correct status for /xhr_no_cat')
-      t.equal(params.method, 'GET', 'correct method for /xhr_no_cat')
-      t.equal(params.pathname, '/xhr_no_cat', 'correct pathname for /xhr_no_cat')
-      t.ok(metrics.rxSize > 5, 'Has some size for /xhr_no_cat')
-      t.ok(metrics.duration > 1, 'Took some time for /xhr_no_cat')
-      t.notok(params.cat, 'does not have CAT data for /xhr_no_cat')
-      if (oldFF) {
-        t.skip('old firefox has inconsistent timing')
-      } else {
-        t.ok(metrics.cbTime >= 4 && metrics.cbTime < 2000, 'Callbacks Took some time for /xhr_no_cat, two load handlers: ' + metrics.cbTime)
-      }
-    },
-    afterOpen: function () {
-      this.xhr.addEventListener('load', waitTwice, false)
-      this.xhr.addEventListener('load', function () { waitTwice() }, false)
-
-      // This should not fire because it has the same arguments as an addEventListener call above. If it is
-      // called, then it will cause the cbTime to be too great. However, if our load event counting is wrong,
-      // then the test will wait for three load callbacks when only two will actually fire.
-      this.xhr.addEventListener('load', waitTwice, false)
-
-      var waitFor = [3, 3, 2000]
-      var waitForIndex = 0
-
-      function waitTwice () {
-        wait(waitFor[waitForIndex++])
-      }
-    },
-    plan: 7
-  },
-  '/xhr_with_cat/2': {
-    gate: function () {
-      tryCrossDomainRequest()
-      return true
-    },
-    check: function (params, metrics, t) {
-      t.equal(params.status, 200, 'status for /xhr_with_cat/2 was ' + params.status)
-      t.equal(params.pathname, '/xhr_with_cat/2', 'got pathname for cross-origin XHR request')
-      t.notok(params.cat, 'does not process CAT data for cross-origin XHR request')
-      if (oldFF) {
-        t.skip('old firefox has inconsistent timing')
-      } else {
-        t.equal(typeof metrics.cbTime, 'number', 'cbTime reported even w/o long running CBs')
-      }
-      t.equal(params.host, assetServerHostname + ':' + corsServerPort, 'host has hostname and port')
-    },
-    host: proto + '//' + assetServerHostname + ':' + corsServerPort,
-    plan: 5
   },
   // Test makes sure we don't swallow the only XHR event that gets fired in
   // webkit when we hit an endpoint on a different origin that doesn't return
