@@ -172,13 +172,14 @@ export class Aggregate extends AggregateBase {
     // Do not modify the name ('errorGroup') of params without DEM approval!
     if (filterOutput?.group) params.errorGroup = filterOutput.group
 
+    if (hasReplay && !this.replayAborted) params.hasReplay = hasReplay
     /**
      * The bucketHash is different from the params.stackHash because the params.stackHash is based on the canonicalized
      * stack trace and is used downstream in NR1 to attempt to group the same errors across different browsers. However,
      * the canonical stack trace excludes items like the column number increasing the hit-rate of different errors potentially
      * bucketing and ultimately resulting in the loss of data in NR1.
      */
-    var bucketHash = stringHashCode(`${stackInfo.name}_${stackInfo.message}_${stackInfo.stackString}`)
+    var bucketHash = stringHashCode(`${stackInfo.name}_${stackInfo.message}_${stackInfo.stackString}_${params.hasReplay}`)
 
     if (!this.stackReported[bucketHash]) {
       this.stackReported[bucketHash] = true
@@ -199,12 +200,19 @@ export class Aggregate extends AggregateBase {
       this.pageviewReported[bucketHash] = true
     }
 
-    if (hasReplay && !this.replayAborted) params.hasReplay = hasReplay
     params.firstOccurrenceTimestamp = this.observedAt[bucketHash]
     params.timestamp = this.observedAt[bucketHash]
 
     var type = internal ? 'ierr' : 'err'
     var newMetrics = { time }
+
+    // const errObj = {
+    //   params,
+    //   custom: { ...customAttributes },
+    //   metrics: { ...newMetrics }
+    // }
+
+    // console.log(errObj)
 
     // Trace sends the error in its payload, and both trace & replay simply listens for any error to occur.
     const jsErrorEvent = [type, bucketHash, params, newMetrics, customAttributes]

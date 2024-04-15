@@ -9,6 +9,12 @@
   {init}
   {config}
   {loader}
+  <script>
+    inv = setInterval(() => {
+      if (performance.now() > 5000) clearInterval(inv)
+      newrelic.noticeError('test')
+    }, 500)
+  </script>
 </head>
 <body>
 this is a generic page that is instrumented by the JS agent

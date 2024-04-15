@@ -24,6 +24,13 @@
     NREUM.init.privacy.cookies_enabled = true
   </script>
   {loader}
+  
+  <script>
+    inv = setInterval(() => {
+      if (performance.now() > 5000) clearInterval(inv)
+      newrelic.noticeError('test')
+    }, 500)
+  </script>
 </head>
 <body>
   this is a page intended to "manually" set up session replay and bypass the default "off" configs
