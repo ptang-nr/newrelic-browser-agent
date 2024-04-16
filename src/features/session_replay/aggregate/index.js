@@ -169,6 +169,7 @@ export class Aggregate extends AggregateBase {
   }
 
   switchToFull () {
+    if (!this.entitled) return
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'switchToFull'
@@ -176,8 +177,7 @@ export class Aggregate extends AggregateBase {
     this.mode = MODE.FULL
     // if the error was noticed AFTER the recorder was already imported....
     if (this.recorder && this.initialized) {
-      this.recorder.stopRecording()
-      this.recorder.startRecording()
+      if (!this.recorder.recording) this.recorder.startRecording()
 
       this.scheduler.startTimer(this.harvestTimeSeconds)
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {

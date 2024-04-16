@@ -93,7 +93,7 @@ export class Aggregate extends AggregateBase {
       }
     }
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'SESSION_REPLAY.AGG',
+      location: 'JSERRORS.AGG',
       event: 'onHarvestStarted',
       hasSRQP: payload.qs.hr,
       errors: payload.body.err?.length || 0
