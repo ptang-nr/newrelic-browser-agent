@@ -24,7 +24,16 @@ export class Instrument extends InstrumentBase {
       session = JSON.parse(localStorage.getItem(`${PREFIX}_${DEFAULT_KEY}`))
     } catch (err) { }
 
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.INST',
+      event: 'constructor'
+    })
+
     if (this.#canPreloadRecorder(session)) {
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.INST',
+        event: 'canPreload'
+      })
       /** If this is preloaded, set up a buffer, if not, later when sampling we will set up a .on for live events */
       this.ee.on('err', (e) => {
         if (this.featAggregate.recorder?.recording) return // agg is now set up and listening for the errs

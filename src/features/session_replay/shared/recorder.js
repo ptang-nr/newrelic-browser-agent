@@ -145,6 +145,13 @@ export class Recorder {
     }
     /** Only store the data if not being "fixed" (full snapshots that have broken css) */
     if (!this.#fixing) this.store(event, isCheckout)
+    else {
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'audit-dropped',
+        incompletes
+      })
+    }
   }
 
   /** Store a payload in the buffer (this.#events).  This should be the callback to the recording lib noticing a mutation */
@@ -203,6 +210,10 @@ export class Recorder {
     try {
       if (!this.recording) return
       recorder.takeFullSnapshot()
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'takeFullSnapshot'
+      })
     } catch (err) {
       // in the off chance we think we are recording, but rrweb does not, rrweb's lib will throw an error.  This catch is just a precaution
     }
