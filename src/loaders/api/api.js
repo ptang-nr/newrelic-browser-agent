@@ -198,7 +198,8 @@ export function setAPI (agentIdentifier, forceDrain, runSoftNavOverSpa = false) 
     newrelic.initializedAgents[agentIdentifier].api.addPageAction('SR', {
       hr: !!replayRunning[agentIdentifier],
       event: 'noticeError',
-      location: 'API'
+      location: 'API',
+      now: performance.now()
     })
   }
 

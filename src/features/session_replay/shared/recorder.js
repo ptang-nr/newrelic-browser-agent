@@ -226,7 +226,8 @@ export class Recorder {
           recording: true,
           location: 'SESSION_REPLAY.RECORDER',
           event: 'store.preloadBuffer',
-          mode: this.parent.mode
+          mode: this.parent.mode,
+          now: performance.now()
         })
         this.#preloaded.push(new RecorderEvents())
       }

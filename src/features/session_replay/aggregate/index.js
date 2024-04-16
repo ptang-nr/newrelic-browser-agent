@@ -58,6 +58,12 @@ export class Aggregate extends AggregateBase {
     this.preloaded = !!this.recorder
     this.errorNoticed = args?.errorNoticed || false
 
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'constructor',
+      now: performance.now()
+    })
+
     handle(SUPPORTABILITY_METRIC_CHANNEL, ['Config/SessionReplay/Enabled'], undefined, FEATURE_NAMES.metrics, this.ee)
 
     // The SessionEntity class can emit a message indicating the session was cleared and reset (expiry, inactivity). This feature must abort and never resume if that occurs.
