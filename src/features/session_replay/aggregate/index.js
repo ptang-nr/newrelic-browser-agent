@@ -230,6 +230,12 @@ export class Aggregate extends AggregateBase {
 
     if (this.recorder?.getEvents().type === 'preloaded') {
       this.prepUtils().then(() => {
+        newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+          recording: true,
+          location: 'SESSION_REPLAY.AGG',
+          event: 'harvestPreloadedEarly',
+          mode: this.parent.mode
+        })
         this.scheduler.runHarvest()
       })
     }
