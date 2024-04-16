@@ -172,7 +172,7 @@ export class Recorder {
 
     // We are making an effort to try to keep payloads manageable for unloading.  If they reach the unload limit before their interval,
     // it will send immediately.  This often happens on the first snapshot, which can be significantly larger than the other payloads.
-    if (payloadSize > IDEAL_PAYLOAD_SIZE && this.parent.mode !== MODE.ERROR) {
+    if ((this.currentBufferTarget.hasSnapshot || payloadSize > IDEAL_PAYLOAD_SIZE) && this.parent.mode !== MODE.ERROR) {
       // if we've made it to the ideal size of ~64kb before the interval timer, we should send early.
       if (this.parent.scheduler) {
         this.parent.scheduler.runHarvest()
