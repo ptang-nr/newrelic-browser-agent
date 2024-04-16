@@ -9,6 +9,7 @@
  * It is not production ready, and is not intended to be imported or implemented in any build of the browser agent until
  * functionality is validated and a full user experience is curated.
  */
+import { handle } from '../../../common/event-emitter/handle'
 import { DEFAULT_KEY, MODE, PREFIX } from '../../../common/session/constants'
 import { InstrumentBase } from '../../utils/instrument-base'
 import { FEATURE_NAME } from '../constants'
@@ -26,12 +27,14 @@ export class Instrument extends InstrumentBase {
     if (this.#canPreloadRecorder(session)) {
       /** If this is preloaded, set up a buffer, if not, later when sampling we will set up a .on for live events */
       this.ee.on('err', (e) => {
+        if (this.featAggregate.recorder?.recording) return // agg is now set up and listening for the errs
         this.errorNoticed = true
-        if (this.featAggregate) this.featAggregate.handleError()
+        // if (this.featAggregate) this.featAggregate.handleError()
         newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
           location: 'SESSION_REPLAY.INST',
           event: 'this.ee.on(err)'
         })
+        handle('preload-errs', [e], undefined, this.featureName, this.ee)
       })
       this.#startRecording(session?.sessionReplayMode)
     } else {
@@ -53,6 +56,12 @@ export class Instrument extends InstrumentBase {
   }
 
   async #startRecording (mode) {
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.INST',
+      event: 'startRecording',
+      mode,
+      errorNoticed: this.errorNoticed
+    })
     const { Recorder } = (await import(/* webpackChunkName: "recorder" */'../shared/recorder'))
     this.recorder = new Recorder({ mode, agentIdentifier: this.agentIdentifier, ee: this.ee })
     this.recorder.startRecording()

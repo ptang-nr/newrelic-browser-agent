@@ -70,6 +70,10 @@ export class Aggregate extends AggregateBase {
     // The SessionEntity class can emit a message indicating the session was resumed (visibility change). This feature must start running again (if already running) if that occurs.
     this.ee.on(SESSION_EVENTS.RESUME, () => {
       if (!this.recorder) return
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'SESSION_EVENTS.RESUME'
+      })
       // if the mode changed on a different tab, it needs to update this instance to match
       const { session } = getRuntime(this.agentIdentifier)
       this.mode = session.state.sessionReplayMode
@@ -81,6 +85,10 @@ export class Aggregate extends AggregateBase {
       if (!this.recorder || !this.initialized || this.blocked || type !== SESSION_EVENT_TYPES.CROSS_TAB) return
       if (this.mode !== MODE.OFF && data.sessionReplayMode === MODE.OFF) this.abort(ABORT_REASONS.CROSS_TAB)
       this.mode = data.sessionReplay
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'SESSION_EVENTS.UPDATE'
+      })
     })
 
     // Bespoke logic for blobs endpoint.
@@ -104,6 +112,14 @@ export class Aggregate extends AggregateBase {
     registerHandler(SR_EVENT_EMITTER_TYPES.PAUSE, () => {
       this.forceStop(this.mode !== MODE.ERROR)
     }, this.featureName, this.ee)
+
+    registerHandler('preload-errs', e => {
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'preload-errs'
+      })
+      this.handleError(e)
+    })
 
     const { error_sampling_rate, sampling_rate, autoStart, block_selector, mask_text_selector, mask_all_inputs, inline_stylesheet, inline_images, collect_fonts } = getConfigurationValue(this.agentIdentifier, 'session_replay')
 
@@ -164,6 +180,10 @@ export class Aggregate extends AggregateBase {
       this.recorder.startRecording()
 
       this.scheduler.startTimer(this.harvestTimeSeconds)
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'scheduler.startTimer'
+      })
 
       this.syncWithSessionManager({ sessionReplayMode: this.mode })
     } else {
@@ -180,6 +200,11 @@ export class Aggregate extends AggregateBase {
    * @returns {void}
    */
   async initializeRecording (errorSample, fullSample, ignoreSession) {
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'initialize',
+      initialized: this.initialized
+    })
     this.initialized = true
     if (!this.entitled) return
 
@@ -234,12 +259,23 @@ export class Aggregate extends AggregateBase {
       })
     }
 
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'initialize.mode',
+      mode: this.mode
+    })
+
     // FULL mode records AND reports from the beginning, while ERROR mode only records (but does not report).
     // ERROR mode will do this until an error is thrown, and then switch into FULL mode.
     // If an error happened in ERROR mode before we've gotten to this stage, it will have already set the mode to FULL
     if (this.mode === MODE.FULL && !this.scheduler.started) {
       // We only report (harvest) in FULL mode
       this.scheduler.startTimer(this.harvestTimeSeconds)
+
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'scheduler.startTimer (initialize)'
+      })
     }
 
     await this.prepUtils()
@@ -255,12 +291,22 @@ export class Aggregate extends AggregateBase {
       const { gzipSync, strToU8 } = await import(/* webpackChunkName: "compressor" */'fflate')
       this.gzipper = gzipSync
       this.u8 = strToU8
+
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.AGG',
+        event: 'download recorder and gzip'
+      })
     } catch (err) {
       // compressor failed to load, but we can still record without compression as a last ditch effort
     }
   }
 
   prepareHarvest ({ opts } = {}) {
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'prepareHarvest'
+    })
     if (!this.recorder || !this.timeKeeper?.ready) return
     const recorderEvents = this.recorder.getEvents()
     // get the event type and use that to trigger another harvest if needed
@@ -307,7 +353,6 @@ export class Aggregate extends AggregateBase {
     const { session } = getRuntime(this.agentIdentifier)
     if (!session.state.sessionReplaySentFirstChunk) this.syncWithSessionManager({ sessionReplaySentFirstChunk: true })
     this.recorder.clearBuffer()
-    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'harvest'

@@ -92,10 +92,22 @@ export class Aggregate extends AggregateBase {
         this.errorOnPage = true
       }
     }
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'onHarvestStarted',
+      hasSRQP: payload.qs.hr,
+      errors: payload.body.err?.length || 0
+    })
     return payload
   }
 
   onHarvestFinished (result) {
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'JSERRORS.AGG',
+      event: 'onHarvestFinished',
+      status: result.status,
+      retry: result.retry
+    })
     if (result.retry && this.currentBody) {
       mapOwn(this.currentBody, (key, value) => {
         for (var i = 0; i < value.length; i++) {
