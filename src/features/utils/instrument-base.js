@@ -65,7 +65,8 @@ export class InstrumentBase extends FeatureBase {
       location: 'INSTRUMENT_BASE',
       event: 'importAggregator',
       featureName: this.featureName,
-      now: performance.now()
+      now: performance.now(),
+      prerender: document.prerendering
     })
 
     if (!this.auto) {
