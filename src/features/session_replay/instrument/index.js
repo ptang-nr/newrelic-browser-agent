@@ -36,7 +36,6 @@ export class Instrument extends InstrumentBase {
       })
       /** If this is preloaded, set up a buffer, if not, later when sampling we will set up a .on for live events */
       this.ee.on('err', (e) => {
-        if (this.featAggregate.recorder?.recording) return // agg is now set up and listening for the errs
         this.errorNoticed = true
         // if (this.featAggregate) this.featAggregate.handleError()
         newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
