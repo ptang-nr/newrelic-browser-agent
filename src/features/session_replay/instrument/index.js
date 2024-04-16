@@ -53,7 +53,7 @@ export class Instrument extends InstrumentBase {
     } else {
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.INST',
-        event: 'importAggregator',
+        event: 'importAggregator (regular)',
         errorNoticed: this.errorNoticed,
         now: performance.now()
       })
@@ -89,7 +89,7 @@ export class Instrument extends InstrumentBase {
     this.abortHandler = this.recorder.stopRecording
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.INST',
-      event: 'importAggregator',
+      event: 'importAggregator (preload)',
       errorNoticed: this.errorNoticed,
       now: performance.now()
     })

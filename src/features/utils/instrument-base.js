@@ -12,6 +12,7 @@ import { warn } from '../../common/util/console'
 import { FEATURE_NAMES } from '../../loaders/features/features'
 import { getConfigurationValue } from '../../common/config/config'
 import { canImportReplayAgg, enableSessionTracking } from '../session_replay/shared/utils'
+import { gosCDN } from '../../common/window/nreum'
 
 /**
  * Base class for instrumenting a feature.
@@ -60,7 +61,7 @@ export class InstrumentBase extends FeatureBase {
    */
   importAggregator (argsObjFromInstrument = {}) {
     if (this.featAggregate) return
-
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'INSTRUMENT_BASE',
       event: 'importAggregator',
@@ -111,9 +112,22 @@ export class InstrumentBase extends FeatureBase {
         }
         const { lazyFeatureLoader } = await import(/* webpackChunkName: "lazy-feature-loader" */ './lazy-feature-loader')
         const { Aggregate } = await lazyFeatureLoader(this.featureName, 'aggregate')
+        const newrelic = gosCDN()
+        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+          location: 'INSTRUMENT_BASE',
+          event: 'import featAggregate SUCCESS',
+          featureName: this.featureName,
+          now: performance.now()
+        })
         this.featAggregate = new Aggregate(this.agentIdentifier, this.aggregator, argsObjFromInstrument)
         loadedSuccessfully(true)
       } catch (e) {
+        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+          location: 'INSTRUMENT_BASE',
+          event: 'import featAggregate FAIL',
+          featureName: this.featureName,
+          now: performance.now()
+        })
         warn(`Downloading and initializing ${this.featureName} failed...`, e)
         this.abortHandler?.() // undo any important alterations made to the page
         // not supported yet but nice to do: "abort" this agent's EE for this feature specifically

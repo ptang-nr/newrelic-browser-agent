@@ -58,6 +58,7 @@ export class Aggregate extends AggregateBase {
     this.preloaded = !!this.recorder
     this.errorNoticed = args?.errorNoticed || false
 
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'constructor',
@@ -166,6 +167,7 @@ export class Aggregate extends AggregateBase {
   }
 
   handleError (e) {
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'handleError',
@@ -180,6 +182,7 @@ export class Aggregate extends AggregateBase {
 
   switchToFull () {
     if (!this.entitled) return
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'switchToFull',
@@ -212,6 +215,7 @@ export class Aggregate extends AggregateBase {
    * @returns {void}
    */
   async initializeRecording (errorSample, fullSample, ignoreSession) {
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'initialize',
@@ -243,6 +247,7 @@ export class Aggregate extends AggregateBase {
 
     if (this.recorder?.getEvents().type === 'preloaded') {
       this.prepUtils().then(() => {
+        const newrelic = gosCDN()
         newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
           recording: true,
           location: 'SESSION_REPLAY.AGG',
@@ -313,6 +318,8 @@ export class Aggregate extends AggregateBase {
       const { gzipSync, strToU8 } = await import(/* webpackChunkName: "compressor" */'fflate')
       this.gzipper = gzipSync
       this.u8 = strToU8
+
+      const newrelic = gosCDN()
 
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
@@ -463,6 +470,7 @@ export class Aggregate extends AggregateBase {
   }
 
   onHarvestFinished (result) {
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'onHarvestFinished',

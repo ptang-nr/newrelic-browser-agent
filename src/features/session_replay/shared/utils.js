@@ -1,5 +1,6 @@
 import { getConfigurationValue, originals } from '../../../common/config/config'
 import { isBrowserScope } from '../../../common/constants/runtime'
+import { gosCDN } from '../../../common/window/nreum'
 
 export const enableSessionTracking = (agentId) => isBrowserScope && getConfigurationValue(agentId, 'privacy.cookies_enabled') === true
 
@@ -14,6 +15,13 @@ export function isPreloadAllowed (agentId) {
 }
 
 export function canImportReplayAgg (agentId, sessionMgr) {
+  const newrelic = gosCDN()
+  newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+    location: 'UTILS',
+    event: 'canImportReplayAgg',
+    canImport: !!hasReplayPrerequisite(agentId) && (!!sessionMgr?.isNew || !!sessionMgr?.state.sessionReplayMode),
+    now: performance.now()
+  })
   if (!hasReplayPrerequisite(agentId)) return false
   return !!sessionMgr?.isNew || !!sessionMgr?.state.sessionReplayMode // Session Replay should only try to run if already running from a previous page, or at the beginning of a session
 }
