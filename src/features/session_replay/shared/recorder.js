@@ -94,7 +94,8 @@ export class Recorder {
     newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
       recording: true,
       location: 'SESSION_REPLAY.RECORDER',
-      event: 'startRecording'
+      event: 'startRecording',
+      mode: this.parent.mode
     })
     this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
 
@@ -105,7 +106,8 @@ export class Recorder {
       newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
         recording: false,
         location: 'SESSION_REPLAY.RECORDER',
-        event: 'stopRecording'
+        event: 'stopRecording',
+        mode: this.parent.mode
       })
       stop()
     }

@@ -141,6 +141,10 @@ export class Aggregate extends AggregateBase {
   }
 
   handleError (e) {
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'handleError'
+    })
     if (this.recorder) this.recorder.currentBufferTarget.hasError = true
     // run once
     if (this.mode === MODE.ERROR && globalScope?.document.visibilityState === 'visible') {
@@ -149,6 +153,10 @@ export class Aggregate extends AggregateBase {
   }
 
   switchToFull () {
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'switchToFull'
+    })
     this.mode = MODE.FULL
     // if the error was noticed AFTER the recorder was already imported....
     if (this.recorder && this.initialized) {
@@ -158,6 +166,8 @@ export class Aggregate extends AggregateBase {
       this.scheduler.startTimer(this.harvestTimeSeconds)
 
       this.syncWithSessionManager({ sessionReplayMode: this.mode })
+    } else {
+      this.initializeRecording(false, true, true)
     }
   }
 
@@ -214,7 +224,15 @@ export class Aggregate extends AggregateBase {
 
     // If an error was noticed before the mode could be set (like in the early lifecycle of the page), immediately set to FULL mode
     if (this.mode === MODE.ERROR && this.errorNoticed) this.mode = MODE.FULL
-    if (!this.preloaded) this.ee.on('err', e => this.handleError(e))
+    if (!this.preloaded) {
+      this.ee.on('err', e => {
+        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+          location: 'SESSION_REPLAY.AGG',
+          event: 'this.ee.on(err)'
+        })
+        this.handleError(e)
+      })
+    }
 
     // FULL mode records AND reports from the beginning, while ERROR mode only records (but does not report).
     // ERROR mode will do this until an error is thrown, and then switch into FULL mode.

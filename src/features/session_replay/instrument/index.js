@@ -28,6 +28,10 @@ export class Instrument extends InstrumentBase {
       this.ee.on('err', (e) => {
         this.errorNoticed = true
         if (this.featAggregate) this.featAggregate.handleError()
+        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+          location: 'SESSION_REPLAY.INST',
+          event: 'this.ee.on(err)'
+        })
       })
       this.#startRecording(session?.sessionReplayMode)
     } else {
