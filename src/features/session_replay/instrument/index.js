@@ -11,6 +11,7 @@
  */
 import { handle } from '../../../common/event-emitter/handle'
 import { DEFAULT_KEY, MODE, PREFIX } from '../../../common/session/constants'
+import { gosCDN } from '../../../common/window/nreum'
 import { InstrumentBase } from '../../utils/instrument-base'
 import { FEATURE_NAME } from '../constants'
 import { isPreloadAllowed } from '../shared/utils'
@@ -24,6 +25,7 @@ export class Instrument extends InstrumentBase {
       session = JSON.parse(localStorage.getItem(`${PREFIX}_${DEFAULT_KEY}`))
     } catch (err) { }
 
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.INST',
       event: 'constructor'
@@ -64,6 +66,7 @@ export class Instrument extends InstrumentBase {
   }
 
   async #startRecording (mode) {
+    const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.INST',
       event: 'startRecording',
