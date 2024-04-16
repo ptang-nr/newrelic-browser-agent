@@ -28,13 +28,15 @@ export class Instrument extends InstrumentBase {
     const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.INST',
-      event: 'constructor'
+      event: 'constructor',
+      now: performance.now()
     })
 
     if (this.#canPreloadRecorder(session)) {
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.INST',
-        event: 'canPreload'
+        event: 'canPreload',
+        now: performance.now()
       })
       /** If this is preloaded, set up a buffer, if not, later when sampling we will set up a .on for live events */
       this.ee.on('err', (e) => {
@@ -42,7 +44,8 @@ export class Instrument extends InstrumentBase {
         // if (this.featAggregate) this.featAggregate.handleError()
         newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
           location: 'SESSION_REPLAY.INST',
-          event: 'this.ee.on(err)'
+          event: 'this.ee.on(err)',
+          now: performance.now()
         })
         handle('preload-errs', [e], undefined, this.featureName, this.ee)
       })
@@ -71,7 +74,8 @@ export class Instrument extends InstrumentBase {
       location: 'SESSION_REPLAY.INST',
       event: 'startRecording',
       mode,
-      errorNoticed: this.errorNoticed
+      errorNoticed: this.errorNoticed,
+      now: performance.now()
     })
     const { Recorder } = (await import(/* webpackChunkName: "recorder" */'../shared/recorder'))
     this.recorder = new Recorder({ mode, agentIdentifier: this.agentIdentifier, ee: this.ee })

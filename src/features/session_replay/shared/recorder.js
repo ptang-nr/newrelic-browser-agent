@@ -149,7 +149,8 @@ export class Recorder {
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
         event: 'audit-dropped',
-        incompletes
+        incompletes,
+        now: performance.now()
       })
     }
   }
@@ -237,7 +238,8 @@ export class Recorder {
       recorder.takeFullSnapshot()
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
-        event: 'takeFullSnapshot'
+        event: 'takeFullSnapshot',
+        now: performance.now()
       })
     } catch (err) {
       // in the off chance we think we are recording, but rrweb does not, rrweb's lib will throw an error.  This catch is just a precaution

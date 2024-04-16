@@ -118,7 +118,8 @@ export class SessionEntity {
           const newrelic = gosCDN()
           newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
             location: 'SESSION_ENTITY',
-            event: 'onPause'
+            event: 'onPause',
+            now: performance.now()
           })
           this.write(getModeledObject(this.state, model))
         },

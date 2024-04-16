@@ -72,7 +72,8 @@ export class Aggregate extends AggregateBase {
       if (!this.recorder) return
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
-        event: 'SESSION_EVENTS.RESUME'
+        event: 'SESSION_EVENTS.RESUME',
+        now: performance.now()
       })
       // if the mode changed on a different tab, it needs to update this instance to match
       const { session } = getRuntime(this.agentIdentifier)
@@ -87,7 +88,8 @@ export class Aggregate extends AggregateBase {
       this.mode = data.sessionReplay
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
-        event: 'SESSION_EVENTS.UPDATE'
+        event: 'SESSION_EVENTS.UPDATE',
+        now: performance.now()
       })
     })
 
@@ -116,7 +118,8 @@ export class Aggregate extends AggregateBase {
     registerHandler('preload-errs', e => {
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
-        event: 'preload-errs'
+        event: 'preload-errs',
+        now: performance.now()
       })
       this.handleError(e)
     })
@@ -159,7 +162,8 @@ export class Aggregate extends AggregateBase {
   handleError (e) {
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
-      event: 'handleError'
+      event: 'handleError',
+      now: performance.now()
     })
     if (this.recorder) this.recorder.currentBufferTarget.hasError = true
     // run once
@@ -172,7 +176,8 @@ export class Aggregate extends AggregateBase {
     if (!this.entitled) return
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
-      event: 'switchToFull'
+      event: 'switchToFull',
+      now: performance.now()
     })
     this.mode = MODE.FULL
     // if the error was noticed AFTER the recorder was already imported....
@@ -182,7 +187,8 @@ export class Aggregate extends AggregateBase {
       this.scheduler.startTimer(this.harvestTimeSeconds)
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
-        event: 'scheduler.startTimer'
+        event: 'scheduler.startTimer',
+        now: performance.now()
       })
 
       this.syncWithSessionManager({ sessionReplayMode: this.mode })
@@ -203,7 +209,8 @@ export class Aggregate extends AggregateBase {
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'initialize',
-      initialized: this.initialized
+      initialized: this.initialized,
+      now: performance.now()
     })
     this.initialized = true
     if (!this.entitled) return
@@ -259,7 +266,8 @@ export class Aggregate extends AggregateBase {
       this.ee.on('err', e => {
         newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
           location: 'SESSION_REPLAY.AGG',
-          event: 'this.ee.on(err)'
+          event: 'this.ee.on(err)',
+          now: performance.now()
         })
         this.handleError(e)
       })
@@ -268,7 +276,8 @@ export class Aggregate extends AggregateBase {
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
       event: 'initialize.mode',
-      mode: this.mode
+      mode: this.mode,
+      now: performance.now()
     })
 
     // FULL mode records AND reports from the beginning, while ERROR mode only records (but does not report).
@@ -280,7 +289,8 @@ export class Aggregate extends AggregateBase {
 
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
-        event: 'scheduler.startTimer (initialize)'
+        event: 'scheduler.startTimer (initialize)',
+        now: performance.now()
       })
     }
 
@@ -300,7 +310,8 @@ export class Aggregate extends AggregateBase {
 
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'SESSION_REPLAY.AGG',
-        event: 'download recorder and gzip'
+        event: 'download recorder and gzip',
+        now: performance.now()
       })
     } catch (err) {
       // compressor failed to load, but we can still record without compression as a last ditch effort
@@ -311,7 +322,8 @@ export class Aggregate extends AggregateBase {
     const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
-      event: 'prepareHarvest'
+      event: 'prepareHarvest',
+      now: performance.now()
     })
     if (!this.recorder || !this.timeKeeper?.ready) return
     const recorderEvents = this.recorder.getEvents()
@@ -361,7 +373,8 @@ export class Aggregate extends AggregateBase {
     this.recorder.clearBuffer()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
-      event: 'harvest'
+      event: 'harvest',
+      now: performance.now()
     })
     if (recorderEvents.type === 'preloaded') this.scheduler.runHarvest(opts)
     return [payload]
@@ -448,7 +461,8 @@ export class Aggregate extends AggregateBase {
       location: 'SESSION_REPLAY.AGG',
       event: 'onHarvestFinished',
       status: result.status,
-      retry: result.retry
+      retry: result.retry,
+      now: performance.now()
     })
     // The mutual decision for now is to stop recording and clear buffers if ingest is experiencing 429 rate limiting
     if (result.status === 429) {
@@ -471,7 +485,8 @@ export class Aggregate extends AggregateBase {
     const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
-      event: 'forceStop'
+      event: 'forceStop',
+      now: performance.now()
     })
   }
 
@@ -489,7 +504,8 @@ export class Aggregate extends AggregateBase {
     const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'SESSION_REPLAY.AGG',
-      event: 'abort'
+      event: 'abort',
+      now: performance.now()
     })
   }
 

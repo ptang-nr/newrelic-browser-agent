@@ -96,7 +96,8 @@ export class Aggregate extends AggregateBase {
       location: 'JSERRORS.AGG',
       event: 'onHarvestStarted',
       hasSRQP: payload.qs.hr,
-      errors: payload.body?.err?.length || 0
+      errors: payload.body?.err?.length || 0,
+      now: performance.now()
     })
     return payload
   }
@@ -106,7 +107,8 @@ export class Aggregate extends AggregateBase {
       location: 'JSERRORS.AGG',
       event: 'onHarvestFinished',
       status: result.status,
-      retry: result.retry
+      retry: result.retry,
+      now: performance.now()
     })
     if (result.retry && this.currentBody) {
       mapOwn(this.currentBody, (key, value) => {
@@ -208,7 +210,8 @@ export class Aggregate extends AggregateBase {
       hr: hasReplay,
       replayAborted: this.replayAborted,
       firstOccurrenceTimestamp: this.observedAt[bucketHash],
-      event: 'storeError'
+      event: 'storeError',
+      now: performance.now()
     })
 
     // When debugging stack canonicalization/hashing, uncomment these lines for

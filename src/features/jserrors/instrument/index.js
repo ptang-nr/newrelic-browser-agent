@@ -39,7 +39,8 @@ export class Instrument extends InstrumentBase {
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'JSERRORS.INST',
         hr: this.#replayRunning,
-        event: 'fn-err'
+        event: 'fn-err',
+        now: performance.now()
       })
     })
 
@@ -55,7 +56,8 @@ export class Instrument extends InstrumentBase {
         location: 'JSERRORS.INST',
         isRunning,
         mode,
-        event: 'REPLAY_RUNNING'
+        event: 'REPLAY_RUNNING',
+        now: performance.now()
       })
     })
 
@@ -66,7 +68,8 @@ export class Instrument extends InstrumentBase {
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'JSERRORS.INST',
         hr: this.#replayRunning,
-        event: 'unhandledrejection'
+        event: 'unhandledrejection',
+        now: performance.now()
       })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
 
@@ -87,7 +90,8 @@ export class Instrument extends InstrumentBase {
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'JSERRORS.INST',
         hr: this.#replayRunning,
-        event: 'error'
+        event: 'error',
+        now: performance.now()
       })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
 
