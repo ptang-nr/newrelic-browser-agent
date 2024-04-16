@@ -46,6 +46,11 @@ export class InteractionTimer extends Timer {
       // NOTE -- this does not account for 2 browser windows open side by side, blurring/focusing between them
       // IF DEEMED necessary, more event handling would be needed to account for this.
       subscribeToVisibilityChange((state) => {
+        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+          location: 'INTERACTION_TIMER',
+          event: 'visibilityChange',
+          state
+        })
         if (state === 'hidden') this.pause()
         // vis change --> visible is treated like a new interaction with the page
         else this.resume()
