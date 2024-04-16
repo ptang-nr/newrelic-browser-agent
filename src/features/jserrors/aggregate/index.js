@@ -96,7 +96,7 @@ export class Aggregate extends AggregateBase {
       location: 'JSERRORS.AGG',
       event: 'onHarvestStarted',
       hasSRQP: payload.qs.hr,
-      errors: payload.body.err?.length || 0
+      errors: payload.body?.err?.length || 0
     })
     return payload
   }

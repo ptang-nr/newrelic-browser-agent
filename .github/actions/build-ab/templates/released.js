@@ -14,7 +14,7 @@ window.NREUM={
     },
     session_replay: {
       enabled: true,
-      sampling_rate: 50,
+      sampling_rate: 100,
       error_sampling_rate: 100,
       autoStart: false,
       {{#if (isEnvironment args.environment 'dev' 'staging')}}
