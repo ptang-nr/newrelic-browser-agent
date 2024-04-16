@@ -63,16 +63,15 @@ export class Instrument extends InstrumentBase {
 
   // At this point wherein session state exists already but we haven't init SessionEntity aka verify timers.
   #canPreloadRecorder (session) {
-    // if (!session) { // this might be a new session if entity initializes: conservatively start recording if first-time config allows
-    //   // Note: users with SR enabled, as well as these other configs enabled by-default, will be penalized by the recorder overhead EVEN IF they don't actually have or get
-    //   // entitlement or sampling decision, or otherwise intentionally opted-in for the feature.
-    //   return isPreloadAllowed(this.agentIdentifier)
-    // } else if (session.sessionReplayMode === MODE.FULL || session.sessionReplayMode === MODE.ERROR) {
-    //   return true // existing sessions get to continue recording, regardless of this page's configs or if it has expired (conservatively)
-    // } else { // SR mode was OFF but may potentially be turned on if session resets and configs allows the new session to have replay...
-    //   return isPreloadAllowed(this.agentIdentifier)
-    // }
-    return false
+    if (!session) { // this might be a new session if entity initializes: conservatively start recording if first-time config allows
+      // Note: users with SR enabled, as well as these other configs enabled by-default, will be penalized by the recorder overhead EVEN IF they don't actually have or get
+      // entitlement or sampling decision, or otherwise intentionally opted-in for the feature.
+      return isPreloadAllowed(this.agentIdentifier)
+    } else if (session.sessionReplayMode === MODE.FULL || session.sessionReplayMode === MODE.ERROR) {
+      return true // existing sessions get to continue recording, regardless of this page's configs or if it has expired (conservatively)
+    } else { // SR mode was OFF but may potentially be turned on if session resets and configs allows the new session to have replay...
+      return isPreloadAllowed(this.agentIdentifier)
+    }
   }
 
   async #startRecording (mode) {
