@@ -205,7 +205,7 @@ export class Aggregate extends AggregateBase {
     const newrelic = gosCDN()
     newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
       location: 'JSERRORS.AGG',
-      hasReplay,
+      hr: hasReplay,
       replayAborted: this.replayAborted,
       firstOccurrenceTimestamp: this.observedAt[bucketHash],
       event: 'storeError'

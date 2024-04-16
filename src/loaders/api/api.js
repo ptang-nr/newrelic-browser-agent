@@ -196,8 +196,8 @@ export function setAPI (agentIdentifier, forceDrain, runSoftNavOverSpa = false) 
     handle('err', [err, now(), false, customAttributes, !!replayRunning[agentIdentifier]], undefined, FEATURE_NAMES.jserrors, instanceEE)
     const newrelic = gosCDN()
     newrelic.initializedAgents[agentIdentifier].api.addPageAction('SR', {
-      hasReplay: !!replayRunning[agentIdentifier],
-      event: 'api',
+      hr: !!replayRunning[agentIdentifier],
+      event: 'noticeError',
       location: 'API'
     })
   }

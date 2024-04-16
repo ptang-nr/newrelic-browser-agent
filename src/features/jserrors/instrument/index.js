@@ -38,7 +38,7 @@ export class Instrument extends InstrumentBase {
       const newrelic = gosCDN()
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'JSERRORS.INST',
-        hasReplay: this.#replayRunning,
+        hr: this.#replayRunning,
         event: 'fn-err'
       })
     })
@@ -65,7 +65,7 @@ export class Instrument extends InstrumentBase {
       const newrelic = gosCDN()
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'JSERRORS.INST',
-        hasReplay: this.#replayRunning,
+        hr: this.#replayRunning,
         event: 'unhandledrejection'
       })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
@@ -86,7 +86,7 @@ export class Instrument extends InstrumentBase {
       const newrelic = gosCDN()
       newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
         location: 'JSERRORS.INST',
-        hasReplay: this.#replayRunning,
+        hr: this.#replayRunning,
         event: 'error'
       })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
