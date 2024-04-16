@@ -97,7 +97,7 @@ export class Recorder {
       event: 'startRecording',
       mode: this.parent.mode
     })
-    this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
+    // this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
 
     this.stopRecording = () => {
       this.recording = false
@@ -163,6 +163,18 @@ export class Recorder {
 
     if (this.parent.blocked) return
 
+    if (!this.notified) {
+      const newrelic = gosCDN()
+      newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+        recording: true,
+        location: 'SESSION_REPLAY.RECORDER',
+        event: 'store',
+        mode: this.parent.mode
+      })
+      this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
+      this.notified = true
+    }
+
     if (this.parent.timeKeeper?.ready && !event.__newrelic) {
       event.__newrelic = buildNRMetaNode(event.timestamp, this.parent.timeKeeper)
       event.timestamp = this.parent.timeKeeper.correctAbsoluteTimestamp(event.timestamp)
@@ -196,6 +208,12 @@ export class Recorder {
     // it will send immediately.  This often happens on the first snapshot, which can be significantly larger than the other payloads.
     if ((this.currentBufferTarget.hasSnapshot || payloadSize > IDEAL_PAYLOAD_SIZE) && this.parent.mode !== MODE.ERROR) {
       // if we've made it to the ideal size of ~64kb before the interval timer, we should send early.
+      newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+        recording: true,
+        location: 'SESSION_REPLAY.RECORDER',
+        event: 'store.harvestEarly',
+        mode: this.parent.mode
+      })
       if (this.parent.scheduler) {
         this.parent.scheduler.runHarvest()
       } else {

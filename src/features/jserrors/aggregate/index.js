@@ -83,7 +83,7 @@ export class Aggregate extends AggregateBase {
 
     if (body && body.err && body.err.length) {
       if (this.replayAborted) {
-        body.err.forEach((e) => {
+        payload.body.err.forEach((e) => {
           delete e.params?.hasReplay
         })
       }
