@@ -19,7 +19,7 @@ import { globalScope } from '../../../common/constants/runtime'
 import { FEATURE_NAME } from '../constants'
 import { FEATURE_NAMES } from '../../../loaders/features/features'
 import { AggregateBase } from '../../utils/aggregate-base'
-import { getNREUMInitializedAgent } from '../../../common/window/nreum'
+import { getNREUMInitializedAgent, gosCDN } from '../../../common/window/nreum'
 import { deregisterDrain } from '../../../common/drain/drain'
 import { now } from '../../../common/timing/now'
 
@@ -173,6 +173,7 @@ export class Aggregate extends AggregateBase {
     if (filterOutput?.group) params.errorGroup = filterOutput.group
 
     if (hasReplay && !this.replayAborted) params.hasReplay = hasReplay
+
     /**
      * The bucketHash is different from the params.stackHash because the params.stackHash is based on the canonicalized
      * stack trace and is used downstream in NR1 to attempt to group the same errors across different browsers. However,
@@ -189,6 +190,14 @@ export class Aggregate extends AggregateBase {
       params.browser_stack_hash = stringHashCode(stackInfo.stackString)
     }
     params.releaseIds = stringify(agentRuntime.releaseIds)
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'JSERRORS.AGG',
+      hasReplay,
+      replayAborted: this.replayAborted,
+      firstOccurrenceTimestamp: this.observedAt[bucketHash],
+      event: 'storeError'
+    })
 
     // When debugging stack canonicalization/hashing, uncomment these lines for
     // more output in the test logs

@@ -194,6 +194,12 @@ export function setAPI (agentIdentifier, forceDrain, runSoftNavOverSpa = false) 
     if (typeof err === 'string') err = new Error(err)
     handle(SUPPORTABILITY_METRIC_CHANNEL, ['API/noticeError/called'], undefined, FEATURE_NAMES.metrics, instanceEE)
     handle('err', [err, now(), false, customAttributes, !!replayRunning[agentIdentifier]], undefined, FEATURE_NAMES.jserrors, instanceEE)
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[agentIdentifier].api.addPageAction('SR', {
+      hasReplay: !!replayRunning[agentIdentifier],
+      event: 'api',
+      location: 'API'
+    })
   }
 
   // theres no window.load event on non-browser scopes, lazy load immediately

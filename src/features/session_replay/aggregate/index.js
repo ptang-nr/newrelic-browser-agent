@@ -29,6 +29,7 @@ import { stylesheetEvaluator } from '../shared/stylesheet-evaluator'
 import { deregisterDrain } from '../../../common/drain/drain'
 import { now } from '../../../common/timing/now'
 import { buildNRMetaNode } from '../shared/utils'
+import { gosCDN } from '../../../common/window/nreum'
 
 export class Aggregate extends AggregateBase {
   static featureName = FEATURE_NAME
@@ -288,6 +289,11 @@ export class Aggregate extends AggregateBase {
     const { session } = getRuntime(this.agentIdentifier)
     if (!session.state.sessionReplaySentFirstChunk) this.syncWithSessionManager({ sessionReplaySentFirstChunk: true })
     this.recorder.clearBuffer()
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'harvest'
+    })
     if (recorderEvents.type === 'preloaded') this.scheduler.runHarvest(opts)
     return [payload]
   }
@@ -369,6 +375,12 @@ export class Aggregate extends AggregateBase {
   }
 
   onHarvestFinished (result) {
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'onHarvestFinished',
+      status: result.status,
+      retry: result.retry
+    })
     // The mutual decision for now is to stop recording and clear buffers if ingest is experiencing 429 rate limiting
     if (result.status === 429) {
       this.abort(ABORT_REASONS.TOO_MANY)
@@ -387,6 +399,11 @@ export class Aggregate extends AggregateBase {
     this.mode = MODE.OFF
     this.recorder?.stopRecording?.()
     this.syncWithSessionManager({ sessionReplayMode: this.mode })
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'forceStop'
+    })
   }
 
   /** Abort the feature, once aborted it will not resume */
@@ -400,6 +417,11 @@ export class Aggregate extends AggregateBase {
     this.recorder?.clearTimestamps?.()
     this.ee.emit('REPLAY_ABORTED')
     while (this.recorder?.getEvents().events.length) this.recorder?.clearBuffer?.()
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.AGG',
+      event: 'abort'
+    })
   }
 
   syncWithSessionManager (state = {}) {

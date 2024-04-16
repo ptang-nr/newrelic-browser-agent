@@ -13,6 +13,7 @@ import { stringify } from '../../../common/util/stringify'
 import { UncaughtError } from './uncaught-error'
 import { now } from '../../../common/timing/now'
 import { SR_EVENT_EMITTER_TYPES } from '../../session_replay/constants'
+import { gosCDN } from '../../../common/window/nreum'
 
 export class Instrument extends InstrumentBase {
   static featureName = FEATURE_NAME
@@ -34,6 +35,12 @@ export class Instrument extends InstrumentBase {
       this.#seenErrors.add(error)
 
       handle('err', [this.#castError(error), now()], undefined, FEATURE_NAMES.jserrors, this.ee)
+      const newrelic = gosCDN()
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'JSERRORS.INST',
+        hasReplay: this.#replayRunning,
+        event: 'fn-err'
+      })
     })
 
     this.ee.on('internal-error', (error) => {
@@ -41,13 +48,26 @@ export class Instrument extends InstrumentBase {
       handle('ierr', [this.#castError(error), now(), true, {}, this.#replayRunning], undefined, FEATURE_NAMES.jserrors, this.ee)
     })
 
-    this.ee.on(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, (isRunning) => {
+    this.ee.on(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, (isRunning, mode) => {
       this.#replayRunning = isRunning
+      const newrelic = gosCDN()
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'JSERRORS.INST',
+        isRunning,
+        mode,
+        event: 'REPLAY_RUNNING'
+      })
     })
 
     globalScope.addEventListener('unhandledrejection', (promiseRejectionEvent) => {
       if (!this.abortHandler) return
       handle('err', [this.#castPromiseRejectionEvent(promiseRejectionEvent), now(), false, { unhandledPromiseRejection: 1 }, this.#replayRunning], undefined, FEATURE_NAMES.jserrors, this.ee)
+      const newrelic = gosCDN()
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'JSERRORS.INST',
+        hasReplay: this.#replayRunning,
+        event: 'unhandledrejection'
+      })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
 
     globalScope.addEventListener('error', (errorEvent) => {
@@ -63,6 +83,12 @@ export class Instrument extends InstrumentBase {
       }
 
       handle('err', [this.#castErrorEvent(errorEvent), now(), false, {}, this.#replayRunning], undefined, FEATURE_NAMES.jserrors, this.ee)
+      const newrelic = gosCDN()
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'JSERRORS.INST',
+        hasReplay: this.#replayRunning,
+        event: 'error'
+      })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
 
     this.abortHandler = this.#abort // we also use this as a flag to denote that the feature is active or on and handling errors

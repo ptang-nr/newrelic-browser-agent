@@ -9,6 +9,7 @@ import { handle } from '../../../common/event-emitter/handle'
 import { SUPPORTABILITY_METRIC_CHANNEL } from '../../metrics/constants'
 import { FEATURE_NAMES } from '../../../loaders/features/features'
 import { buildNRMetaNode } from './utils'
+import { gosCDN } from '../../../common/window/nreum'
 
 export class Recorder {
   /** Each page mutation or event will be stored (raw) in this array. This array will be cleared on each harvest */
@@ -89,11 +90,23 @@ export class Recorder {
       checkoutEveryNms: CHECKOUT_MS[this.parent.mode]
     })
 
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+      recording: true,
+      location: 'SESSION_REPLAY.RECORDER',
+      event: 'startRecording'
+    })
     this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
 
     this.stopRecording = () => {
       this.recording = false
       this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [false, this.parent.mode])
+      const newrelic = gosCDN()
+      newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+        recording: false,
+        location: 'SESSION_REPLAY.RECORDER',
+        event: 'stopRecording'
+      })
       stop()
     }
   }
