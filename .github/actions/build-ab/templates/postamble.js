@@ -44,14 +44,7 @@ try {
           }
         }
       }
-      // if (canRunSr && newrelic && !!newrelic.start) newrelic.start('session_replay')
-      if (canRunSr && newrelic && newrelic.initializedAgents) {
-        var experimentalAgent = Object.values(newrelic.initializedAgents).find(function (agent) {
-          return agent.runtime.buildEnv === 'staging/hold-errors'
-        })
-
-        if (experimentalAgent && !!experimentalAgent.start) experimentalAgent.start('session_replay')
-      }
+      if (canRunSr && newrelic && !!newrelic.start) newrelic.start('session_replay')
     } catch(e){
       // something went wrong...
       if (!!newrelic && !!newrelic.noticeError) newrelic.noticeError(e)
