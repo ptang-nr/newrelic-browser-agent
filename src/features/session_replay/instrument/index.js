@@ -51,6 +51,12 @@ export class Instrument extends InstrumentBase {
       })
       this.#startRecording(session?.sessionReplayMode)
     } else {
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'SESSION_REPLAY.INST',
+        event: 'importAggregator',
+        errorNoticed: this.errorNoticed,
+        now: performance.now()
+      })
       this.importAggregator()
     }
   }
@@ -81,6 +87,12 @@ export class Instrument extends InstrumentBase {
     this.recorder = new Recorder({ mode, agentIdentifier: this.agentIdentifier, ee: this.ee })
     this.recorder.startRecording()
     this.abortHandler = this.recorder.stopRecording
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'SESSION_REPLAY.INST',
+      event: 'importAggregator',
+      errorNoticed: this.errorNoticed,
+      now: performance.now()
+    })
     this.importAggregator({ recorder: this.recorder, errorNoticed: this.errorNoticed })
   }
 }

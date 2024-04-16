@@ -95,7 +95,8 @@ export class Recorder {
       recording: true,
       location: 'SESSION_REPLAY.RECORDER',
       event: 'startRecording',
-      mode: this.parent.mode
+      mode: this.parent.mode,
+      now: performance.now()
     })
     // this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
 
@@ -170,7 +171,8 @@ export class Recorder {
         recording: true,
         location: 'SESSION_REPLAY.RECORDER',
         event: 'store',
-        mode: this.parent.mode
+        mode: this.parent.mode,
+        now: performance.now()
       })
       this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
       this.notified = true

@@ -61,6 +61,13 @@ export class InstrumentBase extends FeatureBase {
   importAggregator (argsObjFromInstrument = {}) {
     if (this.featAggregate) return
 
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'INSTRUMENT_BASE',
+      event: 'importAggregator',
+      featureName: this.featureName,
+      now: performance.now()
+    })
+
     if (!this.auto) {
       // this feature requires an opt in...
       // wait for API to be called
