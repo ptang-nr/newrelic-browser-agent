@@ -67,13 +67,26 @@ export class InstrumentBase extends FeatureBase {
       event: 'importAggregator',
       featureName: this.featureName,
       now: performance.now(),
-      prerender: document.prerendering
+      prerender: document.prerendering,
+      auto: this.auto
     })
 
     if (!this.auto) {
+      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+        location: 'INSTRUMENT_BASE',
+        event: 'not auto - wait for opt in',
+        featureName: this.featureName,
+        now: performance.now()
+      })
       // this feature requires an opt in...
       // wait for API to be called
       this.ee.on(`${this.featureName}-opt-in`, () => {
+        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+          location: 'INSTRUMENT_BASE',
+          event: 'this.ee.on(opt-in)',
+          featureName: this.featureName,
+          now: performance.now()
+        })
         // register the feature to drain only once the API has been called, it will drain when importAggregator finishes for all the features
         // called by the api in that cycle
         registerDrain(this.agentIdentifier, this.featureName)
@@ -94,9 +107,24 @@ export class InstrumentBase extends FeatureBase {
         if (enableSessionTracking(this.agentIdentifier)) { // would require some setup before certain features start
           const { setupAgentSession } = await import(/* webpackChunkName: "session-manager" */ './agent-session')
           session = setupAgentSession(this.agentIdentifier)
+          newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+            location: 'INSTRUMENT_BASE',
+            event: 'Set up session success',
+            featureName: this.featureName,
+            now: performance.now(),
+            prerender: document.prerendering
+          })
         }
       } catch (e) {
         warn('A problem occurred when starting up session manager. This page will not start or extend any session.', e)
+        const newrelic = gosCDN()
+        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+          location: 'INSTRUMENT_BASE',
+          event: 'ABORT SR',
+          featureName: this.featureName,
+          now: performance.now(),
+          prerender: document.prerendering
+        })
         if (this.featureName === FEATURE_NAMES.sessionReplay) this.abortHandler?.() // SR should stop recording if session DNE
       }
 
@@ -106,6 +134,13 @@ export class InstrumentBase extends FeatureBase {
        */
       try {
         if (!this.#shouldImportAgg(this.featureName, session)) {
+          const newrelic = gosCDN()
+          newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+            location: 'INSTRUMENT_BASE',
+            event: 'shouldImportAgg (FAIL)',
+            featureName: this.featureName,
+            now: performance.now()
+          })
           drain(this.agentIdentifier, this.featureName)
           loadedSuccessfully(false) // aggregate module isn't loaded at all
           return
@@ -124,7 +159,7 @@ export class InstrumentBase extends FeatureBase {
       } catch (e) {
         newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
           location: 'INSTRUMENT_BASE',
-          event: 'import featAggregate FAIL',
+          event: 'import featAggregate ERROR',
           featureName: this.featureName,
           now: performance.now()
         })
@@ -150,6 +185,13 @@ export class InstrumentBase extends FeatureBase {
  * @returns
  */
   #shouldImportAgg (featureName, session) {
+    const newrelic = gosCDN()
+    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
+      location: 'INSTRUMENT_BASE',
+      event: 'shouldImportAgg',
+      featureName: this.featureName,
+      now: performance.now()
+    })
     if (featureName === FEATURE_NAMES.sessionReplay) return canImportReplayAgg(this.agentIdentifier, session)
     return true
   }
