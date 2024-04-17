@@ -466,7 +466,7 @@ export class Aggregate extends AggregateBase {
     this.ee.emit('REPLAY_ABORTED')
     while (this.recorder?.getEvents().events.length) this.recorder?.clearBuffer?.()
     debugNR1(this.agentIdentifier, 'SESSION_REPLAY.AGG', 'abort', {
-
+      reason: reason.sm
     })
   }
 

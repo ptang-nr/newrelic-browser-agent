@@ -26,7 +26,7 @@ export class Instrument extends InstrumentBase {
     } catch (err) { }
 
     debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'constructor', {
-
+      initReadMode: session?.sessionReplayMode
     })
 
     if (this.#canPreloadRecorder(session)) {

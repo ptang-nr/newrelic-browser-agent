@@ -98,7 +98,8 @@ export class InstrumentBase extends FeatureBase {
           const { setupAgentSession } = await import(/* webpackChunkName: "session-manager" */ './agent-session')
           session = setupAgentSession(this.agentIdentifier)
           debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'set up session success', {
-            featureName: this.featureName
+            featureName: this.featureName,
+            postManagerMode: session.state.sessionReplayMode
           })
         }
       } catch (e) {
