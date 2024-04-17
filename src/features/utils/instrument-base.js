@@ -61,7 +61,7 @@ export class InstrumentBase extends FeatureBase {
    */
   importAggregator (argsObjFromInstrument = {}) {
     if (this.featAggregate) return
-    debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'canImportReplayAgg', {
+    debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'importAggregatorStart', {
       featureName: this.featureName,
       prerender: document.prerendering,
       auto: this.auto

@@ -69,10 +69,6 @@ export class Instrument extends InstrumentBase {
       mode,
       errorNoticed: this.errorNoticed
     })
-    debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'startRecording', {
-      mode,
-      errorNoticed: this.errorNoticed
-    })
     const { Recorder } = (await import(/* webpackChunkName: "recorder" */'../shared/recorder'))
     this.recorder = new Recorder({ mode, agentIdentifier: this.agentIdentifier, ee: this.ee })
     this.recorder.startRecording()
