@@ -20,6 +20,7 @@ window.NREUM={
       {{#if (isEnvironment args.environment 'dev' 'staging')}}
       mask_all_inputs: false,
       mask_text_selector: null,
+      autoStart: true
       {{/if}}
     },
     session_trace: {
