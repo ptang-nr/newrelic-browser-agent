@@ -15,7 +15,7 @@ export function isPreloadAllowed (agentId) {
 }
 
 export function canImportReplayAgg (agentId, sessionMgr) {
-  debugNR1(this.agentIdentifier, 'UTILS', 'canImportReplayAgg', {
+  debugNR1(agentId, 'UTILS', 'canImportReplayAgg', {
     canImport: !!hasReplayPrerequisite(agentId) && (!!sessionMgr?.isNew || !!sessionMgr?.state.sessionReplayMode)
   })
   if (!hasReplayPrerequisite(agentId)) return false
