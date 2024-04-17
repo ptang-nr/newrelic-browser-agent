@@ -19,9 +19,10 @@ import { globalScope } from '../../../common/constants/runtime'
 import { FEATURE_NAME } from '../constants'
 import { FEATURE_NAMES } from '../../../loaders/features/features'
 import { AggregateBase } from '../../utils/aggregate-base'
-import { getNREUMInitializedAgent, gosCDN } from '../../../common/window/nreum'
+import { getNREUMInitializedAgent } from '../../../common/window/nreum'
 import { deregisterDrain } from '../../../common/drain/drain'
 import { now } from '../../../common/timing/now'
+import { debugNR1 } from '../../utils/nr1-debugger'
 
 /**
  * @typedef {import('./compute-stack-trace.js').StackInfo} StackInfo
@@ -92,24 +93,14 @@ export class Aggregate extends AggregateBase {
         this.errorOnPage = true
       }
     }
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'JSERRORS.AGG',
-      event: 'onHarvestStarted',
-      hasSRQP: payload.qs.hr,
-      errors: payload.body?.err?.length || 0,
-      now: performance.now()
-    })
+    debugNR1(this.agentIdentifier, 'JSERRORS.AGG', 'onHarvestStarted', { errors: payload.body?.err?.length })
+
     return payload
   }
 
   onHarvestFinished (result) {
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'JSERRORS.AGG',
-      event: 'onHarvestFinished',
-      status: result.status,
-      retry: result.retry,
-      now: performance.now()
-    })
+    debugNR1(this.agentIdentifier, 'JSERRORS.AGG', 'onHarvestFinished', { status: result.status, retry: result.retry })
+
     if (result.retry && this.currentBody) {
       mapOwn(this.currentBody, (key, value) => {
         for (var i = 0; i < value.length; i++) {
@@ -204,14 +195,10 @@ export class Aggregate extends AggregateBase {
       params.browser_stack_hash = stringHashCode(stackInfo.stackString)
     }
     params.releaseIds = stringify(agentRuntime.releaseIds)
-    const newrelic = gosCDN()
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'JSERRORS.AGG',
+    debugNR1(this.agentIdentifier, 'JSERRORS.AGG', 'storeError', {
       hr: hasReplay,
       replayAborted: this.replayAborted,
-      firstOccurrenceTimestamp: this.observedAt[bucketHash],
-      event: 'storeError',
-      now: performance.now()
+      firstOccurrenceTimestamp: this.observedAt[bucketHash]
     })
 
     // When debugging stack canonicalization/hashing, uncomment these lines for

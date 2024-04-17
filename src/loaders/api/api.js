@@ -16,6 +16,7 @@ import { apiMethods, asyncApiMethods } from './api-methods'
 import { SR_EVENT_EMITTER_TYPES } from '../../features/session_replay/constants'
 import { now } from '../../common/timing/now'
 import { MODE } from '../../common/session/constants'
+import { debugNR1 } from '../../features/utils/nr1-debugger'
 
 export function setTopLevelCallers () {
   const nr = gosCDN()
@@ -194,12 +195,8 @@ export function setAPI (agentIdentifier, forceDrain, runSoftNavOverSpa = false) 
     if (typeof err === 'string') err = new Error(err)
     handle(SUPPORTABILITY_METRIC_CHANNEL, ['API/noticeError/called'], undefined, FEATURE_NAMES.metrics, instanceEE)
     handle('err', [err, now(), false, customAttributes, !!replayRunning[agentIdentifier]], undefined, FEATURE_NAMES.jserrors, instanceEE)
-    const newrelic = gosCDN()
-    newrelic.initializedAgents[agentIdentifier].api.addPageAction('SR', {
-      hr: !!replayRunning[agentIdentifier],
-      event: 'noticeError',
-      location: 'API',
-      now: performance.now()
+    debugNR1(agentIdentifier, 'API', 'noticeError', {
+      hr: !!replayRunning[agentIdentifier]
     })
   }
 

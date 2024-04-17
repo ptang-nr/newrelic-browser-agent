@@ -12,7 +12,7 @@ import { warn } from '../../common/util/console'
 import { FEATURE_NAMES } from '../../loaders/features/features'
 import { getConfigurationValue } from '../../common/config/config'
 import { canImportReplayAgg, enableSessionTracking } from '../session_replay/shared/utils'
-import { gosCDN } from '../../common/window/nreum'
+import { debugNR1 } from './nr1-debugger'
 
 /**
  * Base class for instrumenting a feature.
@@ -61,31 +61,21 @@ export class InstrumentBase extends FeatureBase {
    */
   importAggregator (argsObjFromInstrument = {}) {
     if (this.featAggregate) return
-    const newrelic = gosCDN()
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'INSTRUMENT_BASE',
-      event: 'importAggregator',
+    debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'canImportReplayAgg', {
       featureName: this.featureName,
-      now: performance.now(),
       prerender: document.prerendering,
       auto: this.auto
     })
 
     if (!this.auto) {
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'INSTRUMENT_BASE',
-        event: 'not auto - wait for opt in',
-        featureName: this.featureName,
-        now: performance.now()
+      debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'not auto', {
+        featureName: this.featureName
       })
       // this feature requires an opt in...
       // wait for API to be called
       this.ee.on(`${this.featureName}-opt-in`, () => {
-        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-          location: 'INSTRUMENT_BASE',
-          event: 'this.ee.on(opt-in)',
-          featureName: this.featureName,
-          now: performance.now()
+        debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'this.ee.on(opt-in)', {
+          featureName: this.featureName
         })
         // register the feature to drain only once the API has been called, it will drain when importAggregator finishes for all the features
         // called by the api in that cycle
@@ -107,23 +97,14 @@ export class InstrumentBase extends FeatureBase {
         if (enableSessionTracking(this.agentIdentifier)) { // would require some setup before certain features start
           const { setupAgentSession } = await import(/* webpackChunkName: "session-manager" */ './agent-session')
           session = setupAgentSession(this.agentIdentifier)
-          newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-            location: 'INSTRUMENT_BASE',
-            event: 'Set up session success',
-            featureName: this.featureName,
-            now: performance.now(),
-            prerender: document.prerendering
+          debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'set up session success', {
+            featureName: this.featureName
           })
         }
       } catch (e) {
         warn('A problem occurred when starting up session manager. This page will not start or extend any session.', e)
-        const newrelic = gosCDN()
-        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-          location: 'INSTRUMENT_BASE',
-          event: 'ABORT SR',
-          featureName: this.featureName,
-          now: performance.now(),
-          prerender: document.prerendering
+        debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'ABORT SR', {
+          featureName: this.featureName
         })
         if (this.featureName === FEATURE_NAMES.sessionReplay) this.abortHandler?.() // SR should stop recording if session DNE
       }
@@ -134,12 +115,8 @@ export class InstrumentBase extends FeatureBase {
        */
       try {
         if (!this.#shouldImportAgg(this.featureName, session)) {
-          const newrelic = gosCDN()
-          newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-            location: 'INSTRUMENT_BASE',
-            event: 'shouldImportAgg (FAIL)',
-            featureName: this.featureName,
-            now: performance.now()
+          debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'shouldImportAgg (FAIL)', {
+            featureName: this.featureName
           })
           drain(this.agentIdentifier, this.featureName)
           loadedSuccessfully(false) // aggregate module isn't loaded at all
@@ -147,21 +124,15 @@ export class InstrumentBase extends FeatureBase {
         }
         const { lazyFeatureLoader } = await import(/* webpackChunkName: "lazy-feature-loader" */ './lazy-feature-loader')
         const { Aggregate } = await lazyFeatureLoader(this.featureName, 'aggregate')
-        const newrelic = gosCDN()
-        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-          location: 'INSTRUMENT_BASE',
-          event: 'import featAggregate SUCCESS',
-          featureName: this.featureName,
-          now: performance.now()
+
+        debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'import featAggregate SUCCESS', {
+          featureName: this.featureName
         })
         this.featAggregate = new Aggregate(this.agentIdentifier, this.aggregator, argsObjFromInstrument)
         loadedSuccessfully(true)
       } catch (e) {
-        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-          location: 'INSTRUMENT_BASE',
-          event: 'import featAggregate ERROR',
-          featureName: this.featureName,
-          now: performance.now()
+        debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'import featAggregate ERROR', {
+          featureName: this.featureName
         })
         warn(`Downloading and initializing ${this.featureName} failed...`, e)
         this.abortHandler?.() // undo any important alterations made to the page
@@ -185,12 +156,8 @@ export class InstrumentBase extends FeatureBase {
  * @returns
  */
   #shouldImportAgg (featureName, session) {
-    const newrelic = gosCDN()
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'INSTRUMENT_BASE',
-      event: 'shouldImportAgg',
-      featureName: this.featureName,
-      now: performance.now()
+    debugNR1(this.agentIdentifier, 'INSTRUMENT_BASE', 'shouldImportAgg', {
+      featureName: this.featureName
     })
     if (featureName === FEATURE_NAMES.sessionReplay) return canImportReplayAgg(this.agentIdentifier, session)
     return true

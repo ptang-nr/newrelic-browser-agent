@@ -12,7 +12,7 @@ import { handle } from '../event-emitter/handle'
 import { SUPPORTABILITY_METRIC_CHANNEL } from '../../features/metrics/constants'
 import { FEATURE_NAMES } from '../../loaders/features/features'
 import { windowAddEventListener } from '../event-listener/event-listener-opts'
-import { gosCDN } from '../window/nreum'
+import { debugNR1 } from '../../features/utils/nr1-debugger'
 
 // this is what can be stored in local storage (not enforced but probably should be)
 // these values should sync between local storage and the parent class props
@@ -115,12 +115,8 @@ export class SessionEntity {
         // When the inactive timer pauses, update the storage values with an update timestamp
         onPause: () => {
           if (this.initialized) this.ee.emit(SESSION_EVENTS.PAUSE)
-          const newrelic = gosCDN()
-          newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-            location: 'SESSION_ENTITY',
-            event: 'onPause',
-            now: performance.now()
-          })
+
+          debugNR1(this.agentIdentifier, 'SESSION_ENTITY', 'onPause')
           this.write(getModeledObject(this.state, model))
         },
         ee: this.ee,

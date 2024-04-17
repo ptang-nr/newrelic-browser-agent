@@ -9,7 +9,7 @@ import { handle } from '../../../common/event-emitter/handle'
 import { SUPPORTABILITY_METRIC_CHANNEL } from '../../metrics/constants'
 import { FEATURE_NAMES } from '../../../loaders/features/features'
 import { buildNRMetaNode } from './utils'
-import { gosCDN } from '../../../common/window/nreum'
+import { debugNR1 } from '../../utils/nr1-debugger'
 
 export class Recorder {
   /** Each page mutation or event will be stored (raw) in this array. This array will be cleared on each harvest */
@@ -90,24 +90,18 @@ export class Recorder {
       checkoutEveryNms: CHECKOUT_MS[this.parent.mode]
     })
 
-    const newrelic = gosCDN()
-    newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+    debugNR1(this.agentIdentifier, 'SESSION_REPLAY.RECORDER', 'startRecording', {
       recording: true,
-      location: 'SESSION_REPLAY.RECORDER',
-      event: 'startRecording',
-      mode: this.parent.mode,
-      now: performance.now()
+      mode: this.parent.mode
     })
     // this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
 
     this.stopRecording = () => {
       this.recording = false
       this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [false, this.parent.mode])
-      const newrelic = gosCDN()
-      newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+
+      debugNR1(this.agentIdentifier, 'SESSION_REPLAY.RECORDER', 'startRecording', {
         recording: false,
-        location: 'SESSION_REPLAY.RECORDER',
-        event: 'stopRecording',
         mode: this.parent.mode
       })
       stop()
@@ -147,11 +141,8 @@ export class Recorder {
     /** Only store the data if not being "fixed" (full snapshots that have broken css) */
     if (!this.#fixing) this.store(event, isCheckout)
     else {
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'SESSION_REPLAY.AGG',
-        event: 'audit-dropped',
-        incompletes,
-        now: performance.now()
+      debugNR1(this.agentIdentifier, 'SESSION_REPLAY.RECORDER', 'audit-dropped', {
+        incompletes
       })
     }
   }
@@ -166,13 +157,9 @@ export class Recorder {
     if (this.parent.blocked) return
 
     if (!this.notified) {
-      const newrelic = gosCDN()
-      newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
+      debugNR1(this.agentIdentifier, 'SESSION_REPLAY.RECORDER', 'audit-dropped', {
         recording: true,
-        location: 'SESSION_REPLAY.RECORDER',
-        event: 'store',
-        mode: this.parent.mode,
-        now: performance.now()
+        mode: this.parent.mode
       })
       this.parent.ee.emit(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, [true, this.parent.mode])
       this.notified = true
@@ -213,21 +200,15 @@ export class Recorder {
       // if we've made it to the ideal size of ~64kb before the interval timer, we should send early.
 
       if (this.parent.scheduler) {
-        newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
-          recording: true,
-          location: 'SESSION_REPLAY.RECORDER',
-          event: 'store.harvestEarly',
+        debugNR1(this.agentIdentifier, 'SESSION_REPLAY.RECORDER', 'store.harvestEarly', {
           mode: this.parent.mode
         })
         this.parent.scheduler.runHarvest()
       } else {
         // we are still in "preload" and it triggered a "stop point".  Make a new set, which will get pointed at on next cycle
-        newrelic.initializedAgents[this.parent.agentIdentifier].api.addPageAction('SR', {
-          recording: true,
-          location: 'SESSION_REPLAY.RECORDER',
-          event: 'store.preloadBuffer',
+        debugNR1(this.agentIdentifier, 'SESSION_REPLAY.RECORDER', 'store.preloadBuffer', {
           mode: this.parent.mode,
-          now: performance.now()
+          recording: true
         })
         this.#preloaded.push(new RecorderEvents())
       }
@@ -239,10 +220,8 @@ export class Recorder {
     try {
       if (!this.recording) return
       recorder.takeFullSnapshot()
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'SESSION_REPLAY.AGG',
-        event: 'takeFullSnapshot',
-        now: performance.now()
+      debugNR1(this.agentIdentifier, 'SESSION_REPLAY.RECORDER', 'takeFullSnapshot', {
+
       })
     } catch (err) {
       // in the off chance we think we are recording, but rrweb does not, rrweb's lib will throw an error.  This catch is just a precaution

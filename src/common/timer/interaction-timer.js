@@ -2,7 +2,7 @@ import { Timer } from './timer'
 import { subscribeToVisibilityChange } from '../window/page-visibility'
 import { debounce } from '../util/invoke'
 import { isBrowserScope } from '../constants/runtime'
-import { gosCDN } from '../window/nreum'
+import { debugNR1 } from '../../features/utils/nr1-debugger'
 
 export class InteractionTimer extends Timer {
   constructor (opts, ms) {
@@ -47,12 +47,8 @@ export class InteractionTimer extends Timer {
       // NOTE -- this does not account for 2 browser windows open side by side, blurring/focusing between them
       // IF DEEMED necessary, more event handling would be needed to account for this.
       subscribeToVisibilityChange((state) => {
-        const newrelic = gosCDN()
-        newrelic.addPageAction('SR', {
-          location: 'INTERACTION_TIMER',
-          event: 'visibilityChange',
-          state,
-          now: performance.now()
+        debugNR1(undefined, 'INTERACTION_TIMER', 'visibilityChange', {
+          state
         })
         if (state === 'hidden') this.pause()
         // vis change --> visible is treated like a new interaction with the page

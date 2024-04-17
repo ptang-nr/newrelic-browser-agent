@@ -11,8 +11,8 @@
  */
 import { handle } from '../../../common/event-emitter/handle'
 import { DEFAULT_KEY, MODE, PREFIX } from '../../../common/session/constants'
-import { gosCDN } from '../../../common/window/nreum'
 import { InstrumentBase } from '../../utils/instrument-base'
+import { debugNR1 } from '../../utils/nr1-debugger'
 import { FEATURE_NAME } from '../constants'
 import { isPreloadAllowed } from '../shared/utils'
 
@@ -25,37 +25,27 @@ export class Instrument extends InstrumentBase {
       session = JSON.parse(localStorage.getItem(`${PREFIX}_${DEFAULT_KEY}`))
     } catch (err) { }
 
-    const newrelic = gosCDN()
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'SESSION_REPLAY.INST',
-      event: 'constructor',
-      now: performance.now()
+    debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'constructor', {
+
     })
 
     if (this.#canPreloadRecorder(session)) {
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'SESSION_REPLAY.INST',
-        event: 'canPreload',
-        now: performance.now()
+      debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'canPreload', {
+
       })
       /** If this is preloaded, set up a buffer, if not, later when sampling we will set up a .on for live events */
       this.ee.on('err', (e) => {
         this.errorNoticed = true
         // if (this.featAggregate) this.featAggregate.handleError()
-        newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-          location: 'SESSION_REPLAY.INST',
-          event: 'this.ee.on(err)',
-          now: performance.now()
+        debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'this.ee.on(err)', {
+
         })
         handle('preload-errs', [e], undefined, this.featureName, this.ee)
       })
       this.#startRecording(session?.sessionReplayMode)
     } else {
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'SESSION_REPLAY.INST',
-        event: 'importAggregator (regular)',
-        errorNoticed: this.errorNoticed,
-        now: performance.now()
+      debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'importAggregator (regular)', {
+
       })
       this.importAggregator()
     }
@@ -75,23 +65,20 @@ export class Instrument extends InstrumentBase {
   }
 
   async #startRecording (mode) {
-    const newrelic = gosCDN()
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'SESSION_REPLAY.INST',
-      event: 'startRecording',
+    debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'startRecording', {
       mode,
-      errorNoticed: this.errorNoticed,
-      now: performance.now()
+      errorNoticed: this.errorNoticed
+    })
+    debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'startRecording', {
+      mode,
+      errorNoticed: this.errorNoticed
     })
     const { Recorder } = (await import(/* webpackChunkName: "recorder" */'../shared/recorder'))
     this.recorder = new Recorder({ mode, agentIdentifier: this.agentIdentifier, ee: this.ee })
     this.recorder.startRecording()
     this.abortHandler = this.recorder.stopRecording
-    newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-      location: 'SESSION_REPLAY.INST',
-      event: 'importAggregator (preload)',
-      errorNoticed: this.errorNoticed,
-      now: performance.now()
+    debugNR1(this.agentIdentifier, 'SESSION_REPLAY.INST', 'importAggregator (preload)', {
+      errorNoticed: this.errorNoticed
     })
     this.importAggregator({ recorder: this.recorder, errorNoticed: this.errorNoticed })
   }

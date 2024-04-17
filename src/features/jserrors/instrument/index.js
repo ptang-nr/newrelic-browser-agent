@@ -13,7 +13,7 @@ import { stringify } from '../../../common/util/stringify'
 import { UncaughtError } from './uncaught-error'
 import { now } from '../../../common/timing/now'
 import { SR_EVENT_EMITTER_TYPES } from '../../session_replay/constants'
-import { gosCDN } from '../../../common/window/nreum'
+import { debugNR1 } from '../../utils/nr1-debugger'
 
 export class Instrument extends InstrumentBase {
   static featureName = FEATURE_NAME
@@ -35,12 +35,8 @@ export class Instrument extends InstrumentBase {
       this.#seenErrors.add(error)
 
       handle('err', [this.#castError(error), now()], undefined, FEATURE_NAMES.jserrors, this.ee)
-      const newrelic = gosCDN()
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'JSERRORS.INST',
-        hr: this.#replayRunning,
-        event: 'fn-err',
-        now: performance.now()
+      debugNR1(this.agentIdentifier, 'JSERRORS.INST', 'fn-err', {
+        hr: this.#replayRunning
       })
     })
 
@@ -51,25 +47,18 @@ export class Instrument extends InstrumentBase {
 
     this.ee.on(SR_EVENT_EMITTER_TYPES.REPLAY_RUNNING, (isRunning, mode) => {
       this.#replayRunning = isRunning
-      const newrelic = gosCDN()
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'JSERRORS.INST',
-        isRunning,
+      debugNR1(this.agentIdentifier, 'JSERRORS.INST', 'REPLAY_RUNNING', {
         mode,
-        event: 'REPLAY_RUNNING',
-        now: performance.now()
+        isRunning
       })
     })
 
     globalScope.addEventListener('unhandledrejection', (promiseRejectionEvent) => {
       if (!this.abortHandler) return
       handle('err', [this.#castPromiseRejectionEvent(promiseRejectionEvent), now(), false, { unhandledPromiseRejection: 1 }, this.#replayRunning], undefined, FEATURE_NAMES.jserrors, this.ee)
-      const newrelic = gosCDN()
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'JSERRORS.INST',
-        hr: this.#replayRunning,
-        event: 'unhandledrejection',
-        now: performance.now()
+
+      debugNR1(this.agentIdentifier, 'JSERRORS.INST', 'unhandledRejection', {
+        hr: this.#replayRunning
       })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
 
@@ -86,12 +75,8 @@ export class Instrument extends InstrumentBase {
       }
 
       handle('err', [this.#castErrorEvent(errorEvent), now(), false, {}, this.#replayRunning], undefined, FEATURE_NAMES.jserrors, this.ee)
-      const newrelic = gosCDN()
-      newrelic.initializedAgents[this.agentIdentifier].api.addPageAction('SR', {
-        location: 'JSERRORS.INST',
-        hr: this.#replayRunning,
-        event: 'error',
-        now: performance.now()
+      debugNR1(this.agentIdentifier, 'JSERRORS.INST', 'error', {
+        hr: this.#replayRunning
       })
     }, eventListenerOpts(false, this.removeOnAbort?.signal))
 
