@@ -64,8 +64,10 @@ export class SessionEntity {
   }
 
   setup ({ value = generateRandomHexString(16), expiresMs = DEFAULT_EXPIRES_MS, inactiveMs = DEFAULT_INACTIVE_MS }) {
+    /** Ensure that certain properties are preserved across a reset if already set */
+    const persistentAttributes = { serverTimeDiff: this.state.serverTimeDiff }
     this.state = {}
-    this.sync(model)
+    this.sync({ ...model, ...persistentAttributes })
 
     // value is intended to act as the primary value of the k=v pair
     this.state.value = value
@@ -212,6 +214,7 @@ export class SessionEntity {
     // * stop recording (stn and sr)...
     // * delete the session and start over
     try {
+      console.log('RESET!')
       if (this.initialized) this.ee.emit(SESSION_EVENTS.RESET)
       this.storage.remove(this.lookupKey)
       this.inactiveTimer?.abort?.()
@@ -224,6 +227,7 @@ export class SessionEntity {
         storage: this.storage,
         expiresMs: this.expiresMs,
         inactiveMs: this.inactiveMs
+        // the time diff?
       })
       return this.read()
     } catch (e) {

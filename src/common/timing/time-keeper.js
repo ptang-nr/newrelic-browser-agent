@@ -35,21 +35,6 @@ export class TimeKeeper {
    */
   #ready = false
 
-  constructor (agentIdentifier) {
-    this.#session = getRuntime(agentIdentifier)?.session
-
-    if (this.#session) {
-      const ee = baseEE.get(agentIdentifier)
-      ee.on(SESSION_EVENTS.UPDATE, this.#processSessionUpdate.bind(this))
-      ee.on(SESSION_EVENTS.STARTED, () => {
-        if (this.#ready) {
-          this.#session.write({ serverTimeDiff: this.#localTimeDiff })
-        }
-      })
-      this.#processSessionUpdate(null, this.#session.read())
-    }
-  }
-
   get ready () {
     return this.#ready
   }
@@ -64,26 +49,31 @@ export class TimeKeeper {
    * @param startTime {number} The start time of the RUM request
    * @param endTime {number} The end time of the RUM request
    */
-  processRumRequest (rumRequest, startTime, endTime) {
+  processRumRequest (rumRequest, startTime, endTime, agentID) {
     if (this.#ready) return // Server time calculated from session entity
+    const storedServerTimeDiff = getRuntime(agentID)?.session?.serverTimeDiff
+    if (storedServerTimeDiff) {
+      this.#localTimeDiff = storedServerTimeDiff
+      this.#correctedOriginTime = originTime - this.#localTimeDiff
+    } else {
+      const responseDateHeader = rumRequest.getResponseHeader('Date')
+      if (!responseDateHeader) {
+        throw new Error('Missing date header on rum response.')
+      }
 
-    const responseDateHeader = rumRequest.getResponseHeader('Date')
-    if (!responseDateHeader) {
-      throw new Error('Missing date header on rum response.')
+      const medianRumOffset = (endTime - startTime) / 2
+      const serverOffset = Math.floor(startTime + medianRumOffset)
+
+      // Corrected page origin time
+      this.#correctedOriginTime = Math.floor(Date.parse(responseDateHeader) - serverOffset)
+      this.#localTimeDiff = originTime - this.#correctedOriginTime
+
+      if (Number.isNaN(this.#correctedOriginTime)) {
+        throw new Error('Date header invalid format.')
+      }
+
+      if (this.#session) this.#session.write({ serverTimeDiff: this.#localTimeDiff })
     }
-
-    const medianRumOffset = (endTime - startTime) / 2
-    const serverOffset = Math.floor(startTime + medianRumOffset)
-
-    // Corrected page origin time
-    this.#correctedOriginTime = Math.floor(Date.parse(responseDateHeader) - serverOffset)
-    this.#localTimeDiff = originTime - this.#correctedOriginTime
-
-    if (Number.isNaN(this.#correctedOriginTime)) {
-      throw new Error('Date header invalid format.')
-    }
-
-    if (this.#session) this.#session.write({ serverTimeDiff: this.#localTimeDiff })
     this.#ready = true
   }
 
@@ -123,5 +113,6 @@ export class TimeKeeper {
       this.#correctedOriginTime = originTime - this.#localTimeDiff
       this.#ready = true
     }
+    return true
   }
 }
