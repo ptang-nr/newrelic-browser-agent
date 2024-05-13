@@ -8,12 +8,6 @@ import { getRuntime } from '../config/config'
  */
 export class TimeKeeper {
   /**
-   * Pointer to the current agent session if it exists.
-   * @type {import('../session/session-entity').SessionEntity}
-   */
-  #session
-
-  /**
    * Represents the browser origin time corrected to NR server time.
    * @type {number}
    */
