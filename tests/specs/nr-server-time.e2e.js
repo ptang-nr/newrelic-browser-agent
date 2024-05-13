@@ -211,10 +211,6 @@ describe('NR Server Time', () => {
   // })
 
   describe('session integration', () => {
-    afterEach(async () => {
-      await browser.destroyAgentSession()
-    })
-
     it('should not re-use the server time diff when session tracking is disabled', async () => {
       await browser.url(await browser.testHandle.assetURL('instrumented.html', {
         init: {

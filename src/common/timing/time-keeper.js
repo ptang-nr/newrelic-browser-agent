@@ -1,7 +1,5 @@
 import { originTime } from '../constants/runtime'
-import { ee as baseEE } from '../event-emitter/contextual-ee'
 import { getRuntime } from '../config/config'
-import { SESSION_EVENT_TYPES, SESSION_EVENTS } from '../session/constants'
 
 /**
  * Class used to adjust the timestamp of harvested data to New Relic server time. This
@@ -94,25 +92,5 @@ export class TimeKeeper {
    */
   correctAbsoluteTimestamp (timestamp) {
     return Math.floor(timestamp - this.#localTimeDiff)
-  }
-
-  /**
-   * Processes a session entity update payload to extract the server time calculated.
-   * @param {import('../session/constants').SESSION_EVENT_TYPES | null} type
-   * @param {Object} data
-   */
-  #processSessionUpdate (type, data) {
-    if (typeof data?.serverTimeDiff !== 'number') return
-
-    if (
-      (!type && !this.#ready) || // This captures the initial read from the session entity when the timekeeper first initializes
-      type === SESSION_EVENT_TYPES.CROSS_TAB // This captures any cross-tab write of the session entity
-    ) {
-      // This captures the initial read from the session entity when the timekeeper first initializes
-      this.#localTimeDiff = data.serverTimeDiff
-      this.#correctedOriginTime = originTime - this.#localTimeDiff
-      this.#ready = true
-    }
-    return true
   }
 }

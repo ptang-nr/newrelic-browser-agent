@@ -117,7 +117,7 @@ export class Aggregate extends AggregateBase {
         }
 
         try {
-          const timeKeeper = new TimeKeeper(this.agentIdentifier)
+          const timeKeeper = new TimeKeeper()
           timeKeeper.processRumRequest(xhr, rumStartTime, rumEndTime)
           if (!timeKeeper.ready) throw new Error('TimeKeeper not ready')
 
