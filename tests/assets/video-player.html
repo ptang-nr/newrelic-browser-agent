@@ -9,13 +9,20 @@
     {init} {config} {loader}
   </head>
   <body>
-    Instrumented
-    <video controls>
+    <video controls width="500">
       <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/mp4" />
     </video>
 
+    <div id="div1">
+      <div id="div2">
+        <div id="div3">
+            <!-- inject new video player -->
+        </div>
+      </div>
+    </div>
+
     <script>
-      const video = document.querySelector('video')
+      function observeVideo(video){
       video.addEventListener('play', evt => {
         console.log("play...", Date.now(), evt)
       })
@@ -40,6 +47,35 @@
       video.addEventListener('waiting', evt => {
         console.log("buffer (waiting)...", evt)
       })
+      console.log("observing video", video)
+    }
+     
+    observeVideo(document.querySelector('video'))
+
+      setTimeout(() => {
+        console.log("add elem")
+        // const elem = document.createElement('video')
+        // elem.setAttribute('control', '')
+
+        // const source = document.createElement('source')
+        // source.setAttribute('src', "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm")
+        // source.setAttribute('type', 'video/mp4')
+        // elem.appendChild(source)
+        const clone = document.querySelector('video').cloneNode(true)
+        document.querySelector('#div3').appendChild(clone)
+      }, 3000)
+
+      const mo = new MutationObserver(records => {
+        records.forEach(record => {
+          record.addedNodes.forEach(addedNode => {
+            if (addedNode instanceof HTMLVideoElement){
+              console.log("video element added!", addedNode)
+              observeVideo(addedNode)
+            }
+          })
+        })
+      })
+      mo.observe(document.body, {childList: true, subtree: true})
     </script>
   </body>
 </html>
