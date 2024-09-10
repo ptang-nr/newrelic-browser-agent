@@ -3,6 +3,7 @@ import { now } from '../timing/now'
 import { checkState } from '../window/load'
 import { generateRandomHexString } from '../ids/unique-id'
 import { gosNREUMOriginals } from '../window/nreum'
+import { copy } from './wrap-function'
 
 export const WEBSOCKET_TAG = 'websocket-'
 export const ADD_EVENT_LISTENER_TAG = 'addEventListener'
@@ -26,6 +27,8 @@ export function wrapWebSocket (sharedEE) {
   Object.defineProperty(WrappedWebSocket, 'name', {
     value: 'WebSocket'
   })
+
+  copy(originals.WS, WrappedWebSocket)
 
   function WrappedWebSocket () {
     const ws = new originals.WS(...arguments)
