@@ -54,7 +54,7 @@ export class TimeKeeper {
 
   /**
    * Process a rum request to calculate NR server time.
-   * @param rumRequest {XMLHttpRequest} The xhr for the rum request
+   * @param rumRequest {XMLHttpRequest | Response} The xhr for the rum request or fetch response
    * @param startTime {number} The start time of the RUM request
    * @param endTime {number} The end time of the RUM request
    */
@@ -62,7 +62,7 @@ export class TimeKeeper {
     this.processStoredDiff() // Check session entity for stored time diff
     if (this.#ready) return // Server time calculated from session entity
 
-    const responseDateHeader = rumRequest.getResponseHeader('Date')
+    const responseDateHeader = Object.hasOwn(rumRequest, 'getResponseHeader') ? rumRequest.getResponseHeader('Date') : rumRequest.headers.get('date')
     if (!responseDateHeader) {
       throw new Error('Missing date header on rum response.')
     }

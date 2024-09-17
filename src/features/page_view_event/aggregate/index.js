@@ -116,7 +116,7 @@ export class Aggregate extends AggregateBase {
       endpoint: 'rum',
       payload: { qs: queryParameters, body },
       opts: { needResponse: true, sendEmptyBody: true },
-      cbFinished: ({ status, responseText, xhr }) => {
+      cbFinished: ({ status, responseText, xhr, fetchResponse }) => {
         const rumEndTime = now()
 
         if (status >= 400 || status === 0) {
@@ -126,7 +126,7 @@ export class Aggregate extends AggregateBase {
         }
 
         try {
-          this.timeKeeper.processRumRequest(xhr, rumStartTime, rumEndTime)
+          this.timeKeeper.processRumRequest(xhr ?? fetchResponse, rumStartTime, rumEndTime)
           if (!this.timeKeeper.ready) throw new Error('TimeKeeper not ready')
 
           agentRuntime.timeKeeper = this.timeKeeper
