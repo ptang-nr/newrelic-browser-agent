@@ -48,6 +48,7 @@ const model = () => {
     metrics: { enabled: true, autoStart: true },
     obfuscate: undefined,
     page_action: { enabled: true },
+    user_actions: { enabled: true },
     page_view_event: { enabled: true, autoStart: true },
     page_view_timing: { enabled: true, harvestTimeSeconds: 30, autoStart: true },
     privacy: { cookies_enabled: true }, // *cli - per discussion, default should be true
@@ -69,8 +70,7 @@ const model = () => {
       error_sampling_rate: 100, // float from 0 - 100
       collect_fonts: false, // serialize fonts for collection without public asset url, this is currently broken in RRWeb -- https://github.com/rrweb-io/rrweb/issues/1304.  When fixed, revisit with test cases
       inline_images: false, // serialize images for collection without public asset url -- right now this is only useful for testing as it easily generates payloads too large to be harvested
-      inline_stylesheet: true, // serialize css for collection without public asset url
-      fix_stylesheets: true, // fetch missing stylesheet resources for inlining, only works if 'inline_stylesheet' is also true
+      fix_stylesheets: true, // fetch missing stylesheet resources for inlining
       // recording config settings
       mask_all_inputs: true,
       // this has a getter/setter to facilitate validation of the selectors

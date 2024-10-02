@@ -32,6 +32,84 @@ describe('ins harvesting', () => {
     expect(estimatedEventTime < receiptTime).toEqual(true) //, 'estimated event time (' + estimatedEventTime + ') < receipt time (' + receiptTime + ')')
   })
 
+  it('should submit UserAction (when enabled)', async () => {
+    const testUrl = await browser.testHandle.assetURL('user-actions.html', { init: { user_actions: { enabled: true } } })
+    await browser.url(testUrl).then(() => browser.waitForAgentLoad())
+
+    const [insHarvests] = await Promise.all([
+      insightsCapture.waitForResult({ timeout: 7500 }),
+      $('#pay-btn').click().then(async () => {
+        // rage click
+        await browser.execute(function () {
+          for (let i = 0; i < 5; i++) {
+            document.querySelector('#textbox').click()
+          }
+        })
+        // stop aggregating textbox clicks
+        await $('body').click()
+      })
+    ])
+
+    const userActionsHarvest = insHarvests.flatMap(harvest => harvest.request.body.ins) // firefox sends a window focus event on load, so we may end up with 2 harvests
+    const clickUAs = userActionsHarvest.filter(ua => ua.action === 'click')
+    expect(clickUAs.length).toBeGreaterThanOrEqual(2)
+    expect(clickUAs[0]).toMatchObject({
+      eventType: 'UserAction',
+      action: 'click',
+      actionCount: 1,
+      duration: 0,
+      relativeMs: '[0]',
+      target: 'html>body>button#pay-btn:nth-of-type(1)',
+      targetId: 'pay-btn',
+      targetTag: 'BUTTON',
+      targetType: 'submit',
+      targetClass: 'btn-cart-add flex-grow container',
+      pageUrl: expect.any(String),
+      timestamp: expect.any(Number)
+    })
+    expect(clickUAs[1]).toMatchObject({
+      eventType: 'UserAction',
+      action: 'click',
+      actionCount: 5,
+      duration: expect.any(Number),
+      relativeMs: expect.any(String),
+      rageClick: true,
+      target: 'html>body>input#textbox:nth-of-type(1)',
+      targetId: 'textbox',
+      targetTag: 'INPUT',
+      targetType: 'text',
+      pageUrl: expect.any(String),
+      timestamp: expect.any(Number)
+    })
+    expect(clickUAs[1].duration).toBeGreaterThan(0)
+    expect(clickUAs[1].relativeMs).toEqual(expect.stringMatching(/^\[\d+(,\d+){4}\]$/))
+  })
+
+  it('should detect iframes on UserActions if agent is running inside iframe', async () => {
+    const testUrl = await browser.testHandle.assetURL('iframe/same-origin.html', { init: { user_actions: { enabled: true } } })
+    await browser.url(testUrl).then(() => browser.pause(2000))
+
+    const [insHarvests] = await Promise.all([
+      insightsCapture.waitForResult({ timeout: 5000 }),
+      browser.execute(function () {
+        const frame = document.querySelector('iframe')
+        const frameBody = frame.contentWindow.document.querySelector('body')
+        frame.focus()
+        frameBody.click()
+        window.focus()
+        window.location.reload()
+      })
+
+    ])
+
+    const userActionsHarvest = insHarvests.flatMap(harvest => harvest.request.body.ins) // firefox sends a window focus event on load, so we may end up with 2 harvests
+    expect(userActionsHarvest.length).toBeGreaterThanOrEqual(3) // 3 page events above, plus the occasional window focus event mentioned above
+    userActionsHarvest.forEach(ua => {
+      expect(ua.eventType).toEqual('UserAction')
+      expect(ua.iframe).toEqual(true)
+    })
+  })
+
   it('should harvest early when buffer gets too large (overall quantity)', async () => {
     const testUrl = await browser.testHandle.assetURL('instrumented.html', { init: { generic_events: { harvestTimeSeconds: 30 } } })
     await browser.url(testUrl)
