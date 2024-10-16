@@ -38,7 +38,7 @@ export class Aggregate extends AggregateBase {
 
     this.preHarvestMethods = []
 
-    this.eventManager = {
+    this.dataManager = {
       [DEFAULT]: {
         eventBuffer: new EventBuffer(),
         harvestScheduler: new HarvestScheduler('ins', {
@@ -119,7 +119,7 @@ export class Aggregate extends AggregateBase {
         })
       }
 
-      this.eventManager[DEFAULT].harvestScheduler.startTimer(this.harvestTimeSeconds, 0)
+      this.dataManager[DEFAULT].harvestScheduler.startTimer(this.harvestTimeSeconds, 0)
 
       this.drain()
     })
@@ -146,22 +146,22 @@ export class Aggregate extends AggregateBase {
     }
 
     const targetStr = stringify(target)
-    let eventBuffer = this.eventManager[DEFAULT].eventBuffer
+    let eventBuffer = this.dataManager[DEFAULT].eventBuffer
     if (target !== DEFAULT && typeof target === 'object' && target !== null && target.applicationID && target.licenseKey) {
-      if (!this.eventManager[targetStr]) {
+      if (!this.dataManager[targetStr]) {
         // THIS IS THE FIRST TIME WE'VE SEEN THIS TARGET, MAKE A NEW EVENT BUFFER
         eventBuffer = new EventBuffer()
-        this.eventManager[targetStr] = {
+        this.dataManager[targetStr] = {
           eventBuffer,
           harvestScheduler: new HarvestScheduler('ins', {
             onFinished: (...args) => this.onHarvestFinished(...args, eventBuffer),
             getPayload: (...args) => this.onHarvestStarted(...args, eventBuffer, target)
           }, this)
         }
-        this.eventManager[targetStr].harvestScheduler.startTimer(this.harvestTimeSeconds)
+        this.dataManager[targetStr].harvestScheduler.startTimer(this.harvestTimeSeconds)
       } else {
         // WEVE SEEN THIS TARGET BEFORE, REUSE THE EVENT BUFFER
-        eventBuffer = this.eventManager[targetStr].eventBuffer
+        eventBuffer = this.dataManager[targetStr].eventBuffer
       }
     }
 
@@ -189,10 +189,10 @@ export class Aggregate extends AggregateBase {
 
     eventBuffer.add(eventAttributes)
 
-    this.checkEventLimits(this.eventManager[targetStr])
+    this.checkEventLimits(this.dataManager[targetStr])
   }
 
-  onHarvestStarted (options, eventBuffer = this.eventManager[DEFAULT].eventBuffer, target = {}) {
+  onHarvestStarted (options, eventBuffer = this.dataManager[DEFAULT].eventBuffer, target = {}) {
     const { userAttributes, atts } = getInfo(this.agentIdentifier)
     if (!eventBuffer.hasData) return
     var payload = ({
@@ -213,16 +213,16 @@ export class Aggregate extends AggregateBase {
     return payload
   }
 
-  onHarvestFinished (result, eventBuffer = this.eventManager[DEFAULT].eventBuffer) {
+  onHarvestFinished (result, eventBuffer = this.dataManager[DEFAULT].eventBuffer) {
     if (result && result?.sent && result?.retry && eventBuffer.held.hasData) eventBuffer.unhold()
     else eventBuffer.held.clear()
   }
 
-  checkEventLimits (eventManager = this.eventManager[DEFAULT]) {
+  checkEventLimits (dataManager = this.dataManager[DEFAULT]) {
     // check if we've reached any harvest limits...
-    if (eventManager.eventBuffer.bytes > IDEAL_PAYLOAD_SIZE) {
+    if (dataManager.eventBuffer.bytes > IDEAL_PAYLOAD_SIZE) {
       this.ee.emit(SUPPORTABILITY_METRIC_CHANNEL, ['GenericEvents/Harvest/Max/Seen'])
-      eventManager.harvestScheduler.runHarvest()
+      dataManager.harvestScheduler.runHarvest()
     }
   }
 }
