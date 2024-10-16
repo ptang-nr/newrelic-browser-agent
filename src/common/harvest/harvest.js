@@ -154,7 +154,7 @@ export class Harvest extends SharedContext {
   }
 
   // The stuff that gets sent every time.
-  baseQueryString (qs, endpoint) {
+  baseQueryString (qs = {}, endpoint) {
     const runtime = getRuntime(this.sharedContext.agentIdentifier)
     const info = getInfo(this.sharedContext.agentIdentifier)
 
@@ -162,14 +162,14 @@ export class Harvest extends SharedContext {
     const hr = runtime?.session?.state.sessionReplayMode === 1 && endpoint !== 'jserrors'
 
     const qps = [
-      'a=' + info.applicationID,
-      encodeParam('sa', (info.sa ? '' + info.sa : '')),
+      's=' + (runtime.session?.state.value || '0'), // the 0 id encaps all untrackable and default traffic
+      ...(!qs.a ? ['&a=' + info.applicationID] : []),
       encodeParam('v', VERSION),
+      encodeParam('sa', (info.sa ? '' + info.sa : '')),
       transactionNameParam(info),
       encodeParam('ct', runtime.customTransaction),
       '&rst=' + now(),
       '&ck=0', // ck param DEPRECATED - still expected by backend
-      '&s=' + (runtime.session?.state.value || '0'), // the 0 id encaps all untrackable and default traffic
       encodeParam('ref', ref),
       encodeParam('ptid', (runtime.ptid ? '' + runtime.ptid : ''))
     ]

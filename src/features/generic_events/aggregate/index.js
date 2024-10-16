@@ -22,6 +22,8 @@ import { IDEAL_PAYLOAD_SIZE } from '../../../common/constants/agent-constants'
 import { UserActionsAggregator } from './user-actions/user-actions-aggregator'
 import { isIFrameWindow } from '../../../common/dom/iframe'
 
+const DEFAULT = 'default'
+
 export class Aggregate extends AggregateBase {
   #agentRuntime
   static featureName = FEATURE_NAME
@@ -34,7 +36,20 @@ export class Aggregate extends AggregateBase {
 
     this.referrerUrl = (isBrowserScope && document.referrer) ? cleanURL(document.referrer) : undefined
 
-    this.events = new EventBuffer()
+    this.preHarvestMethods = []
+
+    this.eventManager = {
+      [DEFAULT]: {
+        eventBuffer: new EventBuffer(),
+        harvestScheduler: new HarvestScheduler('ins', {
+          onFinished: (...args) => this.onHarvestFinished(...args),
+          getPayload: (...args) => {
+            this.preHarvestMethods.forEach(fn => fn(...args))
+            return this.onHarvestStarted(...args)
+          }
+        }, this)
+      }
+    }
 
     this.#agentRuntime = getRuntime(this.agentIdentifier)
 
@@ -45,10 +60,8 @@ export class Aggregate extends AggregateBase {
         return
       }
 
-      const preHarvestMethods = []
-
       if (agentInit.page_action.enabled) {
-        registerHandler('api-addPageAction', (timestamp, name, attributes) => {
+        registerHandler('api-addPageAction', (timestamp, name, attributes, target) => {
           this.addEvent({
             ...attributes,
             eventType: 'PageAction',
@@ -60,7 +73,7 @@ export class Aggregate extends AggregateBase {
               browserWidth: window.document.documentElement?.clientWidth,
               browserHeight: window.document.documentElement?.clientHeight
             })
-          })
+          }, target)
         }, this.featureName, this.ee)
       }
 
@@ -99,19 +112,14 @@ export class Aggregate extends AggregateBase {
           this.addUserAction(this.userActionAggregator.process(evt))
         }, this.featureName, this.ee)
 
-        preHarvestMethods.push((options = {}) => {
+        this.preHarvestMethods.push((options = {}) => {
           /** send whatever UserActions have been aggregated up to this point
            * if we are in a final harvest. By accessing the aggregationEvent, the aggregation is then force-cleared */
           if (options.isFinalHarvest) this.addUserAction(this.userActionAggregator.aggregationEvent)
         })
       }
 
-      this.harvestScheduler = new HarvestScheduler('ins', { onFinished: (...args) => this.onHarvestFinished(...args) }, this)
-      this.harvestScheduler.harvest.on('ins', (...args) => {
-        preHarvestMethods.forEach(fn => fn(...args))
-        return this.onHarvestStarted(...args)
-      })
-      this.harvestScheduler.startTimer(this.harvestTimeSeconds, 0)
+      this.eventManager[DEFAULT].harvestScheduler.startTimer(this.harvestTimeSeconds, 0)
 
       this.drain()
     })
@@ -130,11 +138,31 @@ export class Aggregate extends AggregateBase {
    * @param {object=} obj the event object for storing in the event buffer
    * @returns void
    */
-  addEvent (obj = {}) {
+  addEvent (obj = {}, target = DEFAULT) {
     if (!obj || !Object.keys(obj).length) return
     if (!obj.eventType) {
       warn(44)
       return
+    }
+
+    const targetStr = stringify(target)
+    let eventBuffer = this.eventManager[DEFAULT].eventBuffer
+    if (target !== DEFAULT && typeof target === 'object' && target !== null && target.applicationID && target.licenseKey) {
+      if (!this.eventManager[targetStr]) {
+        // THIS IS THE FIRST TIME WE'VE SEEN THIS TARGET, MAKE A NEW EVENT BUFFER
+        eventBuffer = new EventBuffer()
+        this.eventManager[targetStr] = {
+          eventBuffer,
+          harvestScheduler: new HarvestScheduler('ins', {
+            onFinished: (...args) => this.onHarvestFinished(...args, eventBuffer),
+            getPayload: (...args) => this.onHarvestStarted(...args, eventBuffer, target)
+          }, this)
+        }
+        this.eventManager[targetStr].harvestScheduler.startTimer(this.harvestTimeSeconds)
+      } else {
+        // WEVE SEEN THIS TARGET BEFORE, REUSE THE EVENT BUFFER
+        eventBuffer = this.eventManager[targetStr].eventBuffer
+      }
     }
 
     for (let key in obj) {
@@ -159,41 +187,42 @@ export class Aggregate extends AggregateBase {
       ...obj
     }
 
-    this.events.add(eventAttributes)
+    eventBuffer.add(eventAttributes)
 
-    this.checkEventLimits()
+    this.checkEventLimits(this.eventManager[targetStr])
   }
 
-  onHarvestStarted (options) {
+  onHarvestStarted (options, eventBuffer = this.eventManager[DEFAULT].eventBuffer, target = {}) {
     const { userAttributes, atts } = getInfo(this.agentIdentifier)
-    if (!this.events.hasData) return
+    if (!eventBuffer.hasData) return
     var payload = ({
       qs: {
         ua: userAttributes,
-        at: atts
+        at: atts,
+        a: target.applicationID
       },
       body: applyFnToProps(
-        { ins: this.events.buffer },
+        { ins: eventBuffer.buffer },
         this.obfuscator.obfuscateString.bind(this.obfuscator), 'string'
       )
     })
 
-    if (options.retry) this.events.hold()
-    else this.events.clear()
+    if (options.retry) eventBuffer.hold()
+    else eventBuffer.clear()
 
     return payload
   }
 
-  onHarvestFinished (result) {
-    if (result && result?.sent && result?.retry && this.events.held.hasData) this.events.unhold()
-    else this.events.held.clear()
+  onHarvestFinished (result, eventBuffer = this.eventManager[DEFAULT].eventBuffer) {
+    if (result && result?.sent && result?.retry && eventBuffer.held.hasData) eventBuffer.unhold()
+    else eventBuffer.held.clear()
   }
 
-  checkEventLimits () {
+  checkEventLimits (eventManager = this.eventManager[DEFAULT]) {
     // check if we've reached any harvest limits...
-    if (this.events.bytes > IDEAL_PAYLOAD_SIZE) {
+    if (eventManager.eventBuffer.bytes > IDEAL_PAYLOAD_SIZE) {
       this.ee.emit(SUPPORTABILITY_METRIC_CHANNEL, ['GenericEvents/Harvest/Max/Seen'])
-      this.harvestScheduler.runHarvest()
+      eventManager.harvestScheduler.runHarvest()
     }
   }
 }
