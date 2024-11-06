@@ -39,12 +39,8 @@ export class TraceStorage {
   /** Central function called by all the other store__ & addToTrace API to append a trace node. */
   storeSTN (stn) {
     if (this.parent.blocked) return
-    if (this.parent.everHarvested) {
-      // eslint-disable-next-line no-unused-vars
-      const dummyVar = this.parent.agentRuntime.dne.state.sessionTraceMode
-    }
-    if (this.nodeCount >= MAX_NODES_PER_HARVEST) { // limit the amount of pending data awaiting next harvest
-      if (this.parent.mode !== MODE.ERROR) return
+    if (this.nodeCount >= 1) { // limit the amount of pending data awaiting next harvest
+      if (this.parent.agentRuntime.session.state.sessionTraceMode !== MODE.ERROR) return
       const openedSpace = this.trimSTNs(ERROR_MODE_SECONDS_WINDOW) // but maybe we could make some space by discarding irrelevant nodes if we're in sessioned Error mode
       if (openedSpace === 0) return
     }
