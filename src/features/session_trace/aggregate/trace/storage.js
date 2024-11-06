@@ -41,7 +41,7 @@ export class TraceStorage {
     if (this.parent.blocked) return
     if (this.parent.everHarvested) {
       // eslint-disable-next-line no-unused-vars
-      const dummyVar = this.parent.agentRuntime.session.state.sessionTraceMode
+      const dummyVar = this.parent.agentRuntime.dne.state.sessionTraceMode
     }
     if (this.nodeCount >= MAX_NODES_PER_HARVEST) { // limit the amount of pending data awaiting next harvest
       if (this.parent.mode !== MODE.ERROR) return
