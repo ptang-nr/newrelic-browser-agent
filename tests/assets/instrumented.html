@@ -8,5 +8,22 @@
     <title>RUM Unit Test</title>
     {init} {config} {loader}
   </head>
-  <body>Instrumented</body>
+  <body>Instrumented
+
+    <script>
+      var xhr = new XMLHttpRequest()
+      xhr.NR_CONTEXT = {foo: 'bar'}
+      xhr.addEventListener('loadend', function () {
+        console.log('xhr ended...', this)
+      })
+      xhr.open('GET', '/paththatdoesnotexist')
+      xhr.send()
+
+      const myFetch = fetch('/paththatdoesnotexist')
+      console.log('myFetch', myFetch) 
+      myFetch.then(function (response) {
+        console.log('fetch done', myFetch)
+      })
+    </script>
+  </body>
 </html>

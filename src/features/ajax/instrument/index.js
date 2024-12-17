@@ -306,6 +306,7 @@ function subscribeToEvents (agentRef, ee, handler, dt) {
   }
 
   function onFetchStart (fetchArguments, dtPayload) {
+    // console.log('fetch this', this)
     this.params = {}
     this.metrics = {}
     this.startTime = now()

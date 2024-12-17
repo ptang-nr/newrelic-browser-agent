@@ -70,19 +70,22 @@ export function wrapFetch (sharedEE) {
       target[name] = function () {
         var args = [...arguments]
 
-        var ctx = {}
+        var ctx = ee.context()
         // we are wrapping args in an array so we can preserve the reference
         ee.emit(prefix + 'before-start', [args], ctx)
         var dtPayload
         if (ctx[contextId] && ctx[contextId].dt) dtPayload = ctx[contextId].dt
 
         var origPromiseFromFetch = fn.apply(this, args)
+        origPromiseFromFetch[ctx.contextId] = ctx
+        console.log('origPromiseFromFetch', origPromiseFromFetch)
 
         ee.emit(prefix + 'start', [args, dtPayload], origPromiseFromFetch)
 
         // Note we need to cast the returned (orig) Promise from native APIs into the current global Promise, which may or may not be our WrappedPromise.
         return origPromiseFromFetch.then(function (val) {
           ee.emit(prefix + 'end', [null, val], origPromiseFromFetch)
+          val[ctx.contextId] = ctx
           return val
         }, function (err) {
           ee.emit(prefix + 'end', [err], origPromiseFromFetch)
