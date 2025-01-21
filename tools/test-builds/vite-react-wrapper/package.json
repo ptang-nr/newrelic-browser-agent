@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "@apollo/client": "^3.12.6",
     "@newrelic/browser-agent": "file:../../../temp/newrelic-browser-agent-1.278.3.tgz",
+    "graphql": "^16.10.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },

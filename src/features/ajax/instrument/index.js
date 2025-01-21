@@ -19,6 +19,7 @@ import { FEATURE_NAMES } from '../../../loaders/features/features'
 import { SUPPORTABILITY_METRIC } from '../../metrics/constants'
 import { now } from '../../../common/timing/now'
 import { hasUndefinedHostname } from '../../../common/deny-list/deny-list'
+import { cleanStackTrace, compareStackTraces, createStackTrace, targetStackTrace } from '../../../common/util/compare-stack-trace'
 
 var handlers = ['load', 'error', 'abort', 'timeout']
 var handlersLen = handlers.length
@@ -114,6 +115,7 @@ function subscribeToEvents (agentRef, ee, handler, dt) {
   }
 
   function onOpenXhrStart (args) {
+    readStacks()
     this.params = { method: args[0] }
     addUrl(this, args[1])
     this.metrics = {}
@@ -228,8 +230,20 @@ function subscribeToEvents (agentRef, ee, handler, dt) {
     if (this.xhrCbStart) ee.emit('xhr-cb-time', [now() - this.xhrCbStart, this.onload, xhr], xhr)
   }
 
+  function readStacks () {
+    const stackTrace = createStackTrace()
+    window.xhrStackTrace = stackTrace
+    const isMatch = compareStackTraces(targetStackTrace.stackTrace, cleanStackTrace(stackTrace))
+
+    console.log('includes?', isMatch)
+    if (isMatch) {
+      console.log('SCOPED TARGET IS!', targetStackTrace.target)
+    }
+  }
+
   // this event only handles DT
   function onFetchBeforeStart (args) {
+    readStacks()
     var opts = args[1] || {}
     var url
     if (typeof args[0] === 'string') {

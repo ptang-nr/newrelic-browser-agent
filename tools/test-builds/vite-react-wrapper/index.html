@@ -6,10 +6,29 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     {init}
     {config}
+    {loader}
+    <script src="./script.js"></script>
     <title>Vite Template</title>
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      function sendAjax(path) {
+       let xhrDone = false
+       var xhr = new XMLHttpRequest()
+       xhr.open('GET', path)
+       xhr.onload = function () { xhrDone = true }
+       xhr.send()
+     }
+
+     const ajax = newrelic.captureAjax(sendAjax, {applicationID: 'inline-html', licenseKey: 'inline-html'})
+     console.log("CAPTURE IMAGE FROM INLINE HTML")
+     ajax('/image')
+     setTimeout(() => {
+      console.log("call again...")
+      ajax('/image')
+    }, 5000)
+   </script>
     <script type="module" src="src/main.tsx"></script>
   </body>
 </html>

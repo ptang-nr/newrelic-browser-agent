@@ -8,5 +8,5 @@ const opts = {
   init: NREUM.init
 }
 
-window.agent = new BrowserAgent(opts);
+export const agent = window.agent = new BrowserAgent(opts);
 window.agent.setPageViewName('vite-react-wrapper');

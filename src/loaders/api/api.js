@@ -20,6 +20,7 @@ import { MODE } from '../../common/session/constants'
 import { LOG_LEVELS } from '../../features/logging/constants'
 import { bufferLog } from '../../features/logging/shared/utils'
 import { wrapLogger } from '../../common/wrap/wrap-logger'
+import { createStackTrace, targetStackTrace } from '../../common/util/compare-stack-trace'
 
 export function setTopLevelCallers () {
   const nr = gosCDN()
@@ -196,6 +197,18 @@ export function setAPI (agentIdentifier, forceDrain, runSoftNavOverSpa = false) 
       handle(SUPPORTABILITY_METRIC_CHANNEL, ['API/' + name + '/called'], undefined, FEATURE_NAMES.metrics, instanceEE)
       if (bufferGroup) handle(prefix + name, [notSpa ? now() : performance.now(), ...arguments], notSpa ? null : this, bufferGroup, instanceEE) // no bufferGroup means only the SM is emitted
       return notSpa ? undefined : this // returns the InteractionHandle which allows these methods to be chained
+    }
+  }
+
+  apiInterface.captureAjax = function (func, target) {
+    console.log('CAPTURE AJAX!', func)
+    return (...args) => {
+      console.log('Wrapped AJAX called!', args)
+      targetStackTrace.stackTrace = createStackTrace(true, true)
+      targetStackTrace.target = target
+      // const stackTrace = createStackTrace() // used to cross reference with the stack trace of the xhr event listener
+      // window.traceFnStackTrace = stackTrace // just for local testing, would be removed
+      return func.apply(this, args)
     }
   }
 
