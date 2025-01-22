@@ -33,6 +33,7 @@ export function stringify (val) {
   try {
     return JSON.stringify(val, getCircularReplacer()) ?? ''
   } catch (e) {
+    console.err(e)
     try {
       ee.emit('internal-error', [e])
     } catch (err) {
