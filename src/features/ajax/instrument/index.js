@@ -232,13 +232,17 @@ function subscribeToEvents (agentRef, ee, handler, dt) {
 
   function readStacks () {
     const stackTrace = createStackTrace()
-    window.xhrStackTrace = stackTrace
     const isMatch = compareStackTraces(targetStackTrace.stackTrace, cleanStackTrace(stackTrace))
 
     console.log('includes?', isMatch)
     if (isMatch) {
       console.log('SCOPED TARGET IS!', targetStackTrace.target)
     }
+
+    targetStackTrace.reset()
+    // check if includes
+    // store the context in some way with the event
+    // delete the target stack trace
   }
 
   // this event only handles DT

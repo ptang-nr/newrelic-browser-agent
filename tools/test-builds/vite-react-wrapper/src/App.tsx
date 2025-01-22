@@ -14,5 +14,7 @@ export function App() {
   const send = window.newrelic.captureAjax(sendAjax, { applicationId: 'vite-react-wrapper', licenseKey: 'vite-react-wrapper' })
   console.log("CAPTURE JSON AJAX FROM VITE")
   send('/json')
+  console.log('UNCAPTURED AJAX')
+  sendAjax('/json')
   return <div>Vite React</div>;
 }
