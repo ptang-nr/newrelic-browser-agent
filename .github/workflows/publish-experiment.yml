@@ -21,6 +21,12 @@ on:
         type: boolean
         default: true
 
+env:
+  ${{ if eq(inputs.publish_ab_script, true) }}:
+    S3_PATH: experiments/${{ inputs.nr_environment }}
+  ${{ else }}:
+    S3_PATH: experiments
+
 jobs:
   # Build and publish the branch to S3 experiments folder
   publish-experiment-to-s3:
@@ -50,7 +56,7 @@ jobs:
           aws_role: ${{ secrets.AWS_ROLE_ARN }}
           aws_bucket_name: ${{ secrets.AWS_BUCKET }}
           local_dir: $GITHUB_WORKSPACE/build
-          bucket_dir: experiments/${{ inputs.nr_environment }}/${{ steps.clean-branch-name.outputs.results }}
+          bucket_dir: $S3_PATH/${{ steps.clean-branch-name.outputs.results }}
       - name: Gather purge paths
         id: purge-paths
         run: echo "results=$(echo '${{ steps.s3-upload.outputs.results }}' | jq -j '.[].Key + " "')" >> $GITHUB_OUTPUT
